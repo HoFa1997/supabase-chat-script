@@ -1,18 +1,30 @@
--- Triggers and functions to update channel information based on message activities.
+/*
+  This script creates a trigger that updates channel information based on message activities.
+  Specifically, it creates a trigger named "trigger_update_last_message_preview" that executes the function "update_last_message_preview" after each insertion into the "public.messages" table.
+  The purpose of this trigger is to update the last message preview for the channel associated with the inserted message.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE TRIGGER trigger_update_last_message_preview
 AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION update_last_message_preview();
 
-
---- Update Trigger for Edited Messages
+/*
+  This trigger is used to handle edited messages in the public.messages table.
+  It executes the handle_message_update() function when a message is updated and its content is changed.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE TRIGGER trigger_handle_message_update
 AFTER UPDATE ON public.messages
 FOR EACH ROW
 WHEN (OLD.content IS DISTINCT FROM NEW.content)
 EXECUTE FUNCTION handle_message_update();
 
----- Trigger for Deleted Messages
+/*
+  This trigger is used to handle deleted messages in the public.messages table.
+  It executes the handle_message_delete() function for each deleted row.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE TRIGGER trigger_handle_message_delete
 AFTER DELETE ON public.messages
 FOR EACH ROW

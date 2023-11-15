@@ -1,5 +1,7 @@
--- Triggers and functions to update channel information based on message activities.
-
+/*
+  Triggers and functions to update channel information based on message activities.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE OR REPLACE FUNCTION update_last_message_preview()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -9,8 +11,13 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+ 
 
---- Update Trigger for Edited Messages
+/*
+  Update Trigger for Edited Messages
+  This function updates the last message preview in a channel when a message is edited. It checks if the edited message is the last message in the channel and updates the preview accordingly.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE OR REPLACE FUNCTION handle_message_update()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -33,7 +40,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
----- Trigger for Deleted Messages
+
+/*
+  Trigger for Deleted Messages
+  This function is a trigger function that handles the deletion of messages in a chat application.
+  It updates the last message preview of the channel based on the next most recent message in the channel.
+  If there are no more messages in the channel, it sets the last message preview to NULL or a default text. 
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE OR REPLACE FUNCTION handle_message_delete()
 RETURNS TRIGGER AS $$
 DECLARE
