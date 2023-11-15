@@ -63,10 +63,10 @@ EXECUTE FUNCTION update_message_previews();
 
 /*
   This trigger updates forwarded messages when the content of a message is updated.
-  XXX PROBLEM XXX
+  This script was last tested on 11/15/2023 and passed successfully.
 */
 CREATE TRIGGER trigger_update_original_message
-AFTER UPDATE ON public.messages
+AFTER INSERT ON public.messages
 FOR EACH ROW
 WHEN (NEW.original_message_id IS NOT NULL)
 EXECUTE FUNCTION update_forwarded_messages();

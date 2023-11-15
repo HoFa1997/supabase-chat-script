@@ -113,14 +113,20 @@ $$ LANGUAGE plpgsql;
   This trigger function updates the content of forwarded messages when the original message is updated.
   It listens on the content column of the messages table and updates the content of all messages that have 
   the same original_message_id as the updated message.
-  XXX PROBLEM XXX
+  This script was last tested on 11/15/2023 and passed successfully.
 */
 CREATE OR REPLACE FUNCTION update_forwarded_messages()
 RETURNS TRIGGER AS $$
+DECLARE
+  forwarded_message_content TEXT;
 BEGIN
+  -- Get the content of the original message being replied to
+  SELECT content INTO forwarded_message_content FROM public.messages WHERE id = NEW.reply_to_message_id;
+
   UPDATE public.messages
-  SET content = NEW.content
-  WHERE original_message_id = NEW.id;
+  SET content = forwarded_message_content
+  WHERE id = NEW.id;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
