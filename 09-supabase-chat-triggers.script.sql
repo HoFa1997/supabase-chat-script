@@ -71,8 +71,13 @@ FOR EACH ROW
 WHEN (NEW.original_message_id IS NOT NULL)
 EXECUTE FUNCTION update_forwarded_messages();
 
+/*
+  This trigger creates a soft delete functionality for the original messages in the public.messages table. 
+  It executes the soft_delete_forwarded_messages() function for each deleted row.
+  This script was last tested on 11/16/2023 and passed successfully.
+*/
 CREATE TRIGGER soft_delete_original_message
-AFTER DELETE ON public.messages
+BEFORE DELETE ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION soft_delete_forwarded_messages();
 

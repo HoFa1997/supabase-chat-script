@@ -65,3 +65,39 @@ VALUES
  '5f55998b-7958-4ae3-bcb7-539c65c00884', -- User ID
  '84fd39d1-4467-4181-b07d-b4e9573bc8f9'  -- ID of the original message being replied to
 );
+
+
+/*
+    Test scenario for the soft_delete_forwarded_messages function
+
+    -Use the query you've provided to insert messages that are forwarded from the original message. 
+    You can insert multiple such messages to test the cascade effect thoroughly.
+
+    -This operation should trigger the soft_delete_original_message trigger, invoking 
+    the soft_delete_forwarded_messages function.
+
+    -Finally, verify that the deleted_at field for all forwarded messages linked 
+    to the original message is set to the current timestamp.
+*/
+-- Step 1
+insert into public.messages (id, content, channel_id, user_id)
+values
+(
+ '84fd39d1-4467-4181-b07d-b4e9573bc8f9', -- Message Id
+ 'Hello World 👋', -- Content
+ '4b9f0f7e-6cd5-49b6-a8c3-141ef5905959', -- ChannelId
+ '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e' -- User Id
+);
+-- Step 2
+INSERT INTO public.messages (channel_id, user_id, original_message_id)
+VALUES 
+(
+ '4b9f0f7e-6cd5-49b6-a8c3-141ef5905959', -- Channel ID
+ '35477c6b-f9a0-4bad-af0b-545c99b33fae', -- User ID
+ '84fd39d1-4467-4181-b07d-b4e9573bc8f9'  -- ID of the original message being replied to (Find Created last query id)
+);
+-- Step 3
+DELETE FROM public.messages WHERE id = '84fd39d1-4467-4181-b07d-b4e9573bc8f9';
+-- Step 4
+SELECT * FROM public.messages WHERE deleted_at IS NOT null
+
