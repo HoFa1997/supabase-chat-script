@@ -81,11 +81,19 @@ BEFORE DELETE ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION soft_delete_forwarded_messages();
 
+/*
+  Creates a trigger that executes the function 'create_message_notifications' 
+  after each insert on the 'public.messages' table.
+  This script was last tested on 11/16/2023 and passed successfully.
+*/
 CREATE TRIGGER trigger_create_message_notifications
 AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION create_message_notifications();
 
+/*
+  This trigger creates mention notifications after a new message is inserted into the public.messages table.
+*/
 CREATE TRIGGER trigger_create_mention_notifications
 AFTER INSERT ON public.messages
 FOR EACH ROW

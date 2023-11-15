@@ -136,6 +136,7 @@ $$ LANGUAGE plpgsql;
   This trigger function sets the deleted_at timestamp for forwarded messages in the public.
   messages table when the original message is deleted. 
   The function takes no input parameters and returns the OLD row. 
+  This script was last tested on 11/16/2023 and passed successfully.
 */
 CREATE OR REPLACE FUNCTION soft_delete_forwarded_messages()
 RETURNS TRIGGER AS $$
@@ -147,6 +148,64 @@ BEGIN
   RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
+
+/*
+  Function to create message notifications.
+  It inserts a notification for each member of a channel when a new message is posted.
+  The notification includes a preview of the message content.
+  The notification is not created for the user who posted the message.
+  This script was last tested on 11/16/2023 and passed successfully.
+*/
+CREATE OR REPLACE FUNCTION create_message_notifications()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, type, message_id, created_at, message_preview)
+  SELECT member_id, 'message', NEW.id, NOW(), substring(NEW.content from 1 for 100)
+  FROM public.channel_members
+  WHERE channel_id = NEW.channel_id AND member_id != NEW.user_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+/*
+  Function to create mention notifications.
+  It inserts a notification for each user mentioned in a new message.
+*/
+CREATE OR REPLACE FUNCTION create_mention_notifications()
+RETURNS TRIGGER AS $$
+DECLARE
+  mention_record RECORD; -- Declare a record type variable
+BEGIN
+  FOR mention_record IN SELECT mentioned_user_id FROM public.message_mentions WHERE message_id = NEW.id LOOP
+    INSERT INTO public.notifications (user_id, type, mention_id, created_at, message_preview)
+    VALUES (mention_record.mentioned_user_id, 'mention', NEW.id, NOW(), substring(NEW.content from 1 for 100));
+  END LOOP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- inserts a row into public.users and assigns roles
+create function public.handle_new_user()
+returns trigger as $$
+declare is_admin boolean;
+begin
+  insert into public.users (id, username)
+  values (new.id, new.email);
+
+  select count(*) = 1 from auth.users into is_admin;
+
+  if position('+supaadmin@' in new.email) > 0 then
+    insert into public.user_roles (user_id, role) values (new.id, 'admin');
+  elsif position('+supamod@' in new.email) > 0 then
+    insert into public.user_roles (user_id, role) values (new.id, 'moderator');
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer;
+
+
 
 
 -- authorize with role-based access control (RBAC)
@@ -166,56 +225,5 @@ begin
   into bind_permissions;
 
   return bind_permissions > 0;
-end;
-$$ language plpgsql security definer;
-
--- Function to create mention notifications.
--- It inserts a notification for each user mentioned in a new message.
-CREATE OR REPLACE FUNCTION create_mention_notifications()
-RETURNS TRIGGER AS $$
-DECLARE
-  mention_record RECORD; -- Declare a record type variable
-BEGIN
-  FOR mention_record IN SELECT mentioned_user_id FROM public.message_mentions WHERE message_id = NEW.id LOOP
-    INSERT INTO public.notifications (user_id, type, ref_id, created_at, message_preview)
-    VALUES (mention_record.mentioned_user_id, 'mention', NEW.id, NOW(), substring(NEW.content from 1 for 100));
-  END LOOP;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- Function to create message notifications.
--- It inserts a notification for each member of a channel when a new message is posted.
--- The notification includes a preview of the message content.
--- The notification is not created for the user who posted the message.
-CREATE OR REPLACE FUNCTION create_message_notifications()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.notifications (user_id, type, ref_id, created_at, message_preview)
-  SELECT member_id, 'message', NEW.id, NOW(), substring(NEW.content from 1 for 100)
-  FROM public.channel_members
-  WHERE channel_id = NEW.channel_id AND member_id != NEW.user_id;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- inserts a row into public.users and assigns roles
-create function public.handle_new_user()
-returns trigger as $$
-declare is_admin boolean;
-begin
-  insert into public.users (id, username)
-  values (new.id, new.email);
-
-  select count(*) = 1 from auth.users into is_admin;
-
-  if position('+supaadmin@' in new.email) > 0 then
-    insert into public.user_roles (user_id, role) values (new.id, 'admin');
-  elsif position('+supamod@' in new.email) > 0 then
-    insert into public.user_roles (user_id, role) values (new.id, 'moderator');
-  end if;
-
-  return new;
 end;
 $$ language plpgsql security definer;
