@@ -71,7 +71,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- PINNED MESSAGES TRIGGER TO UPDATE LAST ACTIVITY
+
+/*
+  This function updates the last activity timestamp of a channel whenever a new message is pinned.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE OR REPLACE FUNCTION update_last_activity()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -82,19 +86,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- TRIGGER TO UPDATE replied_message_preview
+/*
+  This function updates the replied_message_preview field in the public.messages table
+  whenever a new message is added that is a reply to an existing message.
+  This script fixed before the 11/15/2023 and passed successfully.
+*/
 CREATE OR REPLACE FUNCTION update_message_previews()
 RETURNS TRIGGER AS $$
+DECLARE
+  original_content TEXT;
 BEGIN
+  -- Get the content of the original message being replied to
+  SELECT content INTO original_content FROM public.messages WHERE id = NEW.reply_to_message_id;
+
+  -- Update the replied_message_preview of the new message with the content of the original message
   UPDATE public.messages
-  SET replied_message_preview = NEW.content -- Or whatever content should be previewed
-  WHERE reply_to_message_id = NEW.id;
+  SET replied_message_preview = original_content
+  WHERE id = NEW.id;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 
--- TRIGGER TO UPDATE forwarded messages, listen on the content column
+/*
+  This trigger function updates the content of forwarded messages when the original message is updated.
+  It listens on the content column of the messages table and updates the content of all messages that have 
+  the same original_message_id as the updated message.
+  XXX PROBLEM XXX
+*/
 CREATE OR REPLACE FUNCTION update_forwarded_messages()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -106,7 +126,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- TRIGGER TO SOFT DELETE forwarded messages
+/*
+  This trigger function sets the deleted_at timestamp for forwarded messages in the public.
+  messages table when the original message is deleted. 
+  The function takes no input parameters and returns the OLD row. 
+*/
 CREATE OR REPLACE FUNCTION soft_delete_forwarded_messages()
 RETURNS TRIGGER AS $$
 BEGIN

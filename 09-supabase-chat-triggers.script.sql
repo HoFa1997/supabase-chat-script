@@ -30,9 +30,15 @@ AFTER DELETE ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION handle_message_delete();
 
-
--- Triggers to update last activity in channels based on message and pinned message activities.
--- PINNED MESSAGES TRIGGER TO UPDATE LAST ACTIVITY
+/*
+  Triggers to update last activity in channels based on message and pinned message activities.
+  This script creates two triggers that update the last activity in channels based on message and pinned message activities.
+  The first trigger, "trigger_update_last_activity", is fired after a new message is inserted into the "public.messages" table.
+  The second trigger, "trigger_update_last_activity_pinned",
+  is fired after a new pinned message is inserted or deleted from the "public.pinned_messages" table.
+  Both triggers execute the same function, "update_last_activity()".  
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
 CREATE TRIGGER trigger_update_last_activity
 AFTER INSERT ON public.messages
 FOR EACH ROW
@@ -45,17 +51,24 @@ EXECUTE FUNCTION update_last_activity();
 
 
 
--- Triggers and functions for handling message updates, replies, and soft deletes.
--- (Triggers and function definitions remain the same)
-CREATE TRIGGER update_replied_previews
-BEFORE UPDATE ON public.messages
+/*
+  This code creates a trigger named "update_replied_previews" that executes the function "update_message_previews"before
+  each update on the "public.messages" table. The purpose of this trigger is to update the message previews when a message is updated.
+  This script was last tested on 11/15/2023 and passed successfully.
+*/
+CREATE TRIGGER trigger_update_replied_previews
+AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION update_message_previews();
 
-CREATE TRIGGER update_original_message
+/*
+  This trigger updates forwarded messages when the content of a message is updated.
+  XXX PROBLEM XXX
+*/
+CREATE TRIGGER trigger_update_original_message
 AFTER UPDATE ON public.messages
 FOR EACH ROW
-WHEN (OLD.content IS DISTINCT FROM NEW.content)
+WHEN (NEW.original_message_id IS NOT NULL)
 EXECUTE FUNCTION update_forwarded_messages();
 
 CREATE TRIGGER soft_delete_original_message

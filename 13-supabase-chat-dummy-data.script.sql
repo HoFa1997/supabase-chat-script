@@ -42,3 +42,26 @@ values
     ('admin', 'channels.delete'),
     ('admin', 'messages.delete'),
     ('moderator', 'messages.delete');
+
+/* 
+    Inserts a new message into the public.messages table with a reply to the first message
+    this dummy data for test update_message_previews function
+*/
+INSERT INTO public.messages (channel_id , user_id , content , reply_to_message_id)
+VALUES 
+('4b9f0f7e-6cd5-49b6-a8c3-141ef5905959',
+'5f55998b-7958-4ae3-bcb7-539c65c00884',
+'This is a reply to the first message', 
+'84fd39d1-4467-4181-b07d-b4e9573bc8f9'
+);
+
+/* 
+    Inserts a new message into the public.messages table with a reply to the first message
+    this dummy data for test update_forwarded_messages function
+*/
+INSERT INTO public.messages (channel_id, user_id, original_message_id)
+VALUES 
+('4b9f0f7e-6cd5-49b6-a8c3-141ef5905959', -- Channel ID
+ '5f55998b-7958-4ae3-bcb7-539c65c00884', -- User ID
+ '84fd39d1-4467-4181-b07d-b4e9573bc8f9'  -- ID of the original message being replied to
+);
