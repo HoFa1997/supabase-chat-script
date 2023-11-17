@@ -4,9 +4,16 @@
 -- It includes a unique identifier, a username, and the user's current status,
 -- along with timestamps for creation and last update.
 create table public.users (
-  id          uuid not null primary key, -- Unique identifier for each user, linked to the Supabase Auth user ID.
-  username    text not null unique,      -- The username chosen by the user. Ensured to be unique.
-  status      user_status default 'OFFLINE'::public.user_status  -- Current status of the user, defaults to 'OFFLINE'.
+  id          uuid references auth.users on delete cascade not null primary key,
+  username    text,      -- The username chosen by the user. Ensured to be unique.
+  status      user_status default 'OFFLINE'::public.user_status,  -- Current status of the user, defaults to 'OFFLINE'.
+  updated_at  timestamp with time zone default timezone('utc'::text, now()) not null,
+  full_name text,
+  avatar_url text,
+  website text,
+  email text,
+
+  constraint username_length check (char_length(username) >= 3)
 );
 
 comment on table public.users is 'Profile data for each user.';

@@ -188,25 +188,28 @@ $$ LANGUAGE plpgsql;
 -- inserts a row into public.users and assigns roles
 create function public.handle_new_user()
 returns trigger as $$
-declare is_admin boolean;
-begin
-  insert into public.users (id, username)
-  values (new.id, new.email);
+DECLARE
+  username text;
+BEGIN
+  IF new.raw_user_meta_data->>'full_name' IS NULL THEN
+    username := new.email; 
+  ELSE
+    username := new.raw_user_meta_data->>'full_name'; 
+  END IF;
 
-  select count(*) = 1 from auth.users into is_admin;
+  -- Insert statement
+  INSERT INTO public.users (id, full_name, avatar_url, email, username)
+  VALUES (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url',
+    new.email,
+    username
+  );
 
-  if position('+supaadmin@' in new.email) > 0 then
-    insert into public.user_roles (user_id, role) values (new.id, 'admin');
-  elsif position('+supamod@' in new.email) > 0 then
-    insert into public.user_roles (user_id, role) values (new.id, 'moderator');
-  end if;
-
-  return new;
-end;
+  RETURN new;
+END;
 $$ language plpgsql security definer;
-
-
-
 
 -- authorize with role-based access control (RBAC)
 create function public.authorize(
