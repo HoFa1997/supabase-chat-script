@@ -1,66 +1,75 @@
 /*
-    This code sets up storage for user avatars in a Supabase chat application.
-    It creates a bucket named 'user_avatars' and defines three policies for the bucket's objects.
-    - "Avatar images are publicly accessible." policy allows anyone to select objects from the bucket.
-    - "Anyone can upload an avatar." policy allows anyone to insert objects into the bucket.
-    - "Anyone can update their own avatar." policy allows users to update their own avatar in the bucket.
+  File: storage_buckets.sql
+  Description: This script defines the storage buckets for a messaging application, similar to Slack.
+  The buckets are designed to store different types of media: user avatars, channel avatars, and general media files.
+  Each bucket has specific policies to control access and usage, ensuring secure and organized file management.
+
+  Reference Documentation:
+  - Storage Overview: https://supabase.com/docs/guides/storage
+  - Storage Schema: https://supabase.com/docs/guides/storage/schema/design
+  - Storage API: https://supabase.com/docs/reference/javascript/storage
+
+  Buckets Overview:
+  - 'user_avatars': For storing user profile images.
+  - 'channel_avatars': For storing images representing chat channels.
+  - 'media': For storing general media files related to messages.
 */
-insert into storage.buckets (id, name)
-    values ('user_avatars', 'user_avatars');
 
-create policy "User Avatar are publicly accessible." on storage.objects
-for select using (bucket_id = 'user_avatars');
+-- User Avatars Bucket Configuration
+-- Purpose: Store user profile images.
+-- Max File Size: 1MB (1,048,576 bytes).
+-- Allowed MIME Types: JPEG, PNG, SVG, GIF, WebP.
+INSERT INTO storage.buckets
+    (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    ('user_avatars', 'user_avatars', true, 1048576,
+     '{"image/jpeg", "image/png", "image/svg+xml", "image/gif", "image/webp"}');
 
-create policy "Anyone can upload an User Avatar." on storage.objects
-for insert with check (bucket_id = 'user_avatars');
+-- Policies for User Avatars Bucket
+CREATE POLICY "User Avatar is publicly accessible" ON storage.objects
+    FOR SELECT TO authenticated USING (bucket_id = 'user_avatars');
+CREATE POLICY "User can upload an avatar" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'user_avatars');
+CREATE POLICY "User can update own avatar" ON storage.objects
+    FOR UPDATE TO authenticated USING (auth.uid() = owner AND bucket_id = 'user_avatars');
+CREATE POLICY "User can delete own avatar" ON storage.objects
+    FOR DELETE TO authenticated USING (auth.uid() = owner AND  bucket_id = 'user_avatars');
 
-create policy "Anyone can update their own User Avatar." on storage.objects
-for update using (auth.uid() = owner) with check (bucket_id = 'user_avatars');
+-- Channel Avatars Bucket Configuration
+-- Purpose: Store images for chat channels.
+-- Max File Size: 1MB (1,048,576 bytes).
+-- Allowed MIME Types: JPEG, PNG, SVG, GIF, WebP.
+INSERT INTO storage.buckets
+    (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    ('channel_avatars', 'channel_avatars', true, 1048576,
+     '{"image/jpeg", "image/png", "image/svg+xml", "image/gif", "image/webp"}');
 
+-- Policies for Channel Avatars Bucket
+CREATE POLICY "Channel Avatar is publicly accessible" ON storage.objects
+    FOR SELECT TO authenticated USING (bucket_id = 'channel_avatars');
+CREATE POLICY "User can upload a channel avatar" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'channel_avatars');
+CREATE POLICY "User can update own channel avatar" ON storage.objects
+    FOR UPDATE TO authenticated USING (auth.uid() = owner AND bucket_id = 'channel_avatars');
+CREATE POLICY "User can delete own channel avatar" ON storage.objects
+    FOR DELETE TO authenticated USING (auth.uid() = owner AND bucket_id = 'channel_avatars');
 
-/*
-    This SQL code is used to insert a new record into the "storage.buckets" table,
-    create three policies for the "storage.objects" table related to the "channel_avatars" bucket,
-    and define the conditions for selecting, inserting, and updating objects in the bucket.
-    The first policy allows public access to select objects in the "channel_avatars" bucket.
-    The second policy allows anyone to insert objects into the "channel_avatars" bucket.
-    The third policy allows anyone to update their own channel in the "channel_avatars" bucket,
-    based on the condition that the authenticated user's ID matches the owner of the object.
-*/
-insert into storage.buckets (id, name)
-  values ('channel_avatars', 'channel_avatars');
+-- Media Files Bucket Configuration
+-- Purpose: Store various media files related to messages.
+-- Max File Size: 2MB (2,097,152 bytes).
+-- Allowed MIME Types: All file types.
+INSERT INTO storage.buckets
+    (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    ('media', 'media', true, 2097152, '{"*/*"}');
 
-create policy "Channel Avatar images are publicly accessible." on storage.objects
-for select using (bucket_id = 'channel_avatars');
-
-create policy "Anyone can upload an Channel Avatar." on storage.objects
-for insert with check (bucket_id = 'channel_avatars');
-
-create policy "Anyone can update their own Channel Avatar." on storage.objects
-for update using (auth.uid() = owner) with check (bucket_id = 'channel_avatars');
-
-
-/*
-    This SQL code is used to insert a new row into the "storage.buckets" table,
-    create three policies for the "storage.objects" table in order to manage access control for media files.
-
-    The first policy, "Avatar images are publicly accessible.", allows users to select objects from the "storage.objects" table
-    only if the bucket_id is set to 'media'.
-
-    The second policy, "Anyone can upload an avatar.", allows users to insert new objects into the "storage.objects" table
-    only if the bucket_id is set to 'media'.
-
-    The third policy, "Anyone can update their own media.", allows users to update objects in the "storage.objects" table
-    only if the authenticated user's ID matches the owner column value and the bucket_id is set to 'media'.
-*/
-insert into storage.buckets (id, name)
-  values ('media', 'media');
-
-create policy "media are publicly accessible." on storage.objects
-for select using (bucket_id = 'media');
-
-create policy "Anyone can upload an media." on storage.objects
-for insert with check (bucket_id = 'media');
-
-create policy "Anyone can update their media." on storage.objects
-for update using (auth.uid() = owner) with check (bucket_id = 'media');
+-- Policies for Media Files Bucket
+CREATE POLICY "Media files are publicly accessible" ON storage.objects
+    FOR SELECT TO authenticated USING (bucket_id = 'media');
+CREATE POLICY "User can upload media files" ON storage.objects
+    FOR INSERT TO authenticated WITH CHECK (bucket_id = 'media');
+CREATE POLICY "User can update own media files" ON storage.objects
+    FOR UPDATE TO authenticated USING (auth.uid() = owner AND bucket_id = 'media');
+CREATE POLICY "User can delete own media files" ON storage.objects
+    FOR DELETE TO authenticated USING (auth.uid() = owner AND bucket_id = 'media');
