@@ -30,12 +30,23 @@ COMMENT ON TABLE public.messages IS 'Contains individual messages sent by users,
 
 
 -- const metadata = {
---  replied:['user_id1', 'userid2'],
---  forwarding_chain: [
---    {user_id: 'user_id1', username: 'john', 'full_nam': 'John Doe'},
---    {user_id: 'user_id2', username: 'jane', 'full_nam': 'Jane Doe'},
---  ],
---}
+--   "replied": [
+--     "68d37413-e405-40e8-aec6-4a741be8982b"
+--   ],
+--   "is_important": true,
+--   "forwarding_chain": [
+--     {
+--       "user_id": "35477c6b-f9a0-4bad-af0b-545c99b33fae",
+--       "username": "philip",
+--       "full_name": null
+--     },
+--     {
+--       "user_id": "1059dbd0-3478-46f9-b8a9-dcd23ed0a23a",
+--       "username": "emma",
+--       "full_name": null
+--     }
+--   ]
+-- }
 
 -- const medias = [
 --   {
