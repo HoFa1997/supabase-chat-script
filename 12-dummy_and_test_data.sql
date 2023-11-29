@@ -114,13 +114,6 @@ values
 
 
 
---- test qeury expections
--- test 1. count of messages in channel
-select count(*) from public.messages where channel_id = '4d582754-4d72-48f8-9e72-f6aa63dacada';
--- test 2. last message preview
-select content from public.messages where channel_id = '4d582754-4d72-48f8-9e72-f6aa63dacada' order by created_at desc limit 1;
---- ... and so on
-
 /*
     -----------------------------------------
     5. Pin Messages
@@ -129,9 +122,19 @@ select content from public.messages where channel_id = '4d582754-4d72-48f8-9e72-
 */
 
 -- step 1: create a message
+INSERT INTO public.messages (id, content, channel_id, user_id)
+values
+(
+    'b35dc5bc-ac7f-4fbe-a039-7822034e9dca',
+    'New Events coming soon!',
+    '7ea75977-9bc0-4008-b5b8-13c56d16a588',  '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- game-boy -- philip
+
+);
+
+-- step 2: pin the message
 insert into public.pinned_messages (channel_id, message_id, pinned_by)
 values
-    ('7ea75977-9bc0-4008-b5b8-13c56d16a588', '7e84eca7-cf38-4eee-8127-847e78727ea5', '35477c6b-f9a0-4bad-af0b-545c99b33fae');
+    ('7ea75977-9bc0-4008-b5b8-13c56d16a588', 'b35dc5bc-ac7f-4fbe-a039-7822034e9dca', '35477c6b-f9a0-4bad-af0b-545c99b33fae');
 
 /*
     -----------------------------------------
@@ -144,26 +147,26 @@ INSERT INTO public.messages (id, content, channel_id, user_id)
 VALUES (
     'f8d2002b-01ff-4c4a-9375-92c24e942950',
     'Exciting news about upcoming features!', 
-    '4d582754-4d72-48f8-9e72-f6aa63dacada', 
-    '35477c6b-f9a0-4bad-af0b-545c99b33fae'
+    '4d582754-4d72-48f8-9e72-f6aa63dacada',  -- netfilix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- emma
 );
 
--- step 2: add a reaction to the message
+-- step 2: add a reaction to the message - lisa reaction
 UPDATE public.messages
 SET reactions = jsonb_set(
     COALESCE(reactions, '{}'), 
     '{😄}', 
-    COALESCE(reactions->'😄', '[]') || jsonb_build_array(jsonb_build_object('user_id', '5f55998b-7958-4ae3-bcb7-539c65c00884', 'created_at', current_timestamp)),
+    COALESCE(reactions->'😄', '[]') || jsonb_build_array(jsonb_build_object('user_id', 'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'created_at', current_timestamp)),
     true
 )
 WHERE id = 'f8d2002b-01ff-4c4a-9375-92c24e942950';
 
--- step 3: add another reaction to the message
+-- step 3: add another reaction to the message - philip racation
 UPDATE public.messages
 SET reactions = jsonb_set(
     COALESCE(reactions, '{}'), 
     '{👍}', 
-    COALESCE(reactions->'👍', '[]') || jsonb_build_array(jsonb_build_object('user_id', 'dc7d6520-8408-4a8b-b628-78d5f82b8b62', 'created_at', current_timestamp)),
+    COALESCE(reactions->'👍', '[]') || jsonb_build_array(jsonb_build_object('user_id', '35477c6b-f9a0-4bad-af0b-545c99b33fae', 'created_at', current_timestamp)),
     true
 )
 WHERE id = 'f8d2002b-01ff-4c4a-9375-92c24e942950';
@@ -172,8 +175,11 @@ WHERE id = 'f8d2002b-01ff-4c4a-9375-92c24e942950';
     -----------------------------------------
     7. Reply to Messages
        Expectation: 
-            1. Two messages should be attached to the first message as replies.
-            2. The metadata of the first message should be updated accordingly.
+            1. Two messages should be attached to the first message (ID '1a3485e7-48eb-4fd1-afe1-3bb5506e4fe1') as replies.
+            2. Notifications should be created for the replies:
+                a. A 'reply' type notification should be sent to the user with ID '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' (emma), as she is the owner of the original message.
+                b. 'message' type notifications should be sent to all other members of the channel '4d582754-4d72-48f8-9e72-f6aa63dacada' (netfilix), excluding the senders of the replies (lisa and philip) and any members who have muted notifications.
+            3. The metadata of the first message should be updated to reflect these replies.
     -----------------------------------------
 */
 
@@ -207,7 +213,7 @@ VALUES
 /*
     -----------------------------------------
     8. Forward Messages
-       Expectation: Define specific expectations here.
+       Expectation: ---
     -----------------------------------------
 */
 
@@ -221,12 +227,12 @@ values
     '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
 );
 
--- step 2: add reaction to the message
+-- step 2: emma react to the message
 UPDATE public.messages
 SET reactions = jsonb_set(
     COALESCE(reactions, '{}'), 
     '{👍}', 
-    COALESCE(reactions->'👍', '[]') || jsonb_build_array(jsonb_build_object('user_id', 'dc7d6520-8408-4a8b-b628-78d5f82b8b62', 'created_at', current_timestamp)),
+    COALESCE(reactions->'👍', '[]') || jsonb_build_array(jsonb_build_object('user_id', '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', 'created_at', current_timestamp)),
     true
 )
 WHERE id = '0486ed3d-8e48-49ed-b8af-2387909f642f';
@@ -245,24 +251,24 @@ WHERE id = '0486ed3d-8e48-49ed-b8af-2387909f642f';
 INSERT INTO public.messages (channel_id, user_id, content, reply_to_message_id)
 VALUES(
     '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
-    '5f55998b-7958-4ae3-bcb7-539c65c00884', -- User: Jack
+    'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: lisa
     'I am! Cant wait to watch it.', -- Content
     '0486ed3d-8e48-49ed-b8af-2387909f642f' -- original message id
 );
 
--- step 6: forward the message
+-- step 6: forward the message in to two channels
 INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
 values
 (   
     '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86', -- ID
     'dc6a0f60-5260-456b-a5c7-b799cece8807', -- Channel: openai
-    'dc7d6520-8408-4a8b-b628-78d5f82b8b62', -- User: Jhon
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae', -- User: philip
     '0486ed3d-8e48-49ed-b8af-2387909f642f' -- original message id
 ),
 (
     'bb27aacc-e31a-4664-9606-103972702dd5', -- ID
     '1292efc2-0cdc-470c-9364-ba76f19ce75d', -- Channel: tech-talk
-    'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: Lisa
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', -- User: emma
     '0486ed3d-8e48-49ed-b8af-2387909f642f' -- original message id
 );
 
@@ -276,12 +282,12 @@ values
     '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86' -- original message id
 );
 
--- step 8: add reaction to the forwarded message
+-- step 8: lisa react to the forwarded message
 UPDATE public.messages
 SET reactions = jsonb_set(
     COALESCE(reactions, '{}'), 
     '{😼}', 
-    COALESCE(reactions->'😼', '[]') || jsonb_build_array(jsonb_build_object('user_id', '5f55998b-7958-4ae3-bcb7-539c65c00884', 'created_at', current_timestamp)),
+    COALESCE(reactions->'😼', '[]') || jsonb_build_array(jsonb_build_object('user_id', 'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'created_at', current_timestamp)),
     true
 )
 WHERE id = '4701aef9-cfcc-45e2-80ec-e0f3ffdc25dc';
@@ -313,6 +319,7 @@ VALUES(
        Expectation: Jack should receive a notification from Philip in the game-boy channel.
     -----------------------------------------
 */
+
 insert into public.messages (id, content, channel_id, user_id)
 values
 (
@@ -337,8 +344,6 @@ values
     'dc6a0f60-5260-456b-a5c7-b799cece8807', -- chanel: openai
     '5f55998b-7958-4ae3-bcb7-539c65c00884' -- user: jack
 );
-
-
 
 
 /*
@@ -395,8 +400,13 @@ WHERE id = '5716352d-9380-49aa-9509-71e06f8b3d23';
 /*
     -----------------------------------------
     13. Soft Delete a Message
-       Expectation: After soft deleting the pinned message, the pinned message must be deleted and related updates should occur.
-
+       Expectation: 
+       This scenario tests the soft deletion of a message within the application, focusing on the comprehensive effects of such an action.
+       Specifically, it examines the following outcomes:
+       1. The targeted message should be soft-deleted, indicated by the 'deleted_at' timestamp being set.
+       2. Any pinned instance of the soft-deleted message should be automatically removed from the 'public.pinned_messages' table.
+       3. Replies and forwardings of the soft-deleted message should remain intact but should reflect the deletion status in any associated previews or metadata.
+       4. The 'unread_message_count' in 'public.channel_members' should be decremented for members who have not read the message, ensuring accurate read status tracking.
     -----------------------------------------
 */
 
@@ -427,7 +437,7 @@ values
 );
 
 
--- step 2: reply to the message
+-- step 3: reply to the message
 INSERT INTO public.messages (channel_id, user_id, content, reply_to_message_id)
 values
 (
@@ -438,7 +448,7 @@ values
 );
 
 
--- step 3: forward the message
+-- step 4: forward the message
 INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
 values
 (
@@ -454,12 +464,24 @@ values
     'de4b69f5-a304-4afa-80cc-89882d612d20' -- original message id
 );
 
--- step 4: soft delete the message
+-- step 5: soft delete the message
 UPDATE public.messages
 SET deleted_at = now()
 WHERE id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
 
 
--- leave must be delete not soft delete!
--- Test notificaiton for mute user or channle
+-- Expected queries to validate the test case:
+-- 1. Verify the soft deletion of the message.
+SELECT * FROM public.messages WHERE id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
+
+-- 2. Confirm removal of the message from pinned messages.
+SELECT * FROM public.pinned_messages WHERE message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
+
+-- 3. Check the status of replies and forwards related to the soft-deleted message.
+SELECT * FROM public.messages WHERE reply_to_message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20'
+   OR original_message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
+
+-- 4. Validate the updated unread_message_count for channel members.
+SELECT * FROM public.channel_members WHERE channel_id = '4d582754-4d72-48f8-9e72-f6aa63dacada';
+
 
