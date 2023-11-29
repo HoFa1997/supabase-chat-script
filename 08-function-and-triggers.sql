@@ -272,29 +272,42 @@ CREATE OR REPLACE FUNCTION decrement_unread_message_count() RETURNS TRIGGER AS $
 DECLARE
     channel_member RECORD;
     notification_count INT;
+    channel_id_used uid;
 BEGIN
+    -- Determine whether it's a soft delete (update) or hard delete
+    IF TG_OP = 'DELETE' THEN
+        channel_id_used := OLD.channel_id;
+    ELSE
+        channel_id_used := NEW.channel_id;
+    END IF;
+
     -- Decrement unread message count for channel members
-    FOR channel_member IN SELECT * FROM public.channel_members WHERE channel_id = NEW.channel_id LOOP
+    FOR channel_member IN SELECT * FROM public.channel_members WHERE channel_id = channel_id_used LOOP
         -- Count the notifications associated with the message for this particular user
         SELECT COUNT(*) INTO notification_count 
         FROM public.notifications 
-        WHERE user_id = channel_member.member_id AND channel_id = NEW.channel_id AND read_at IS NULL;
+        WHERE user_id = channel_member.member_id AND channel_id = channel_id_used AND read_at IS NULL;
 
         UPDATE public.channel_members
         SET unread_message_count = notification_count
-        WHERE channel_id = NEW.channel_id AND member_id = channel_member.member_id;
+        WHERE channel_id = channel_id_used AND member_id = channel_member.member_id;
     END LOOP;
 
-    RETURN OLD;
+    RETURN NULL; -- Return value is not used for AFTER triggers
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER decrement_unread_message_count_trigger
+
+CREATE TRIGGER decrement_unread_message_count_trigger_soft_delete
 AFTER UPDATE OF deleted_at ON public.messages
 FOR EACH ROW
+WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL)
 EXECUTE FUNCTION decrement_unread_message_count();
 
-COMMENT ON TRIGGER decrement_unread_message_count_trigger ON public.messages IS 'Trigger to handle unread message counts adjustment in channel_members after message soft-delete.';
+CREATE TRIGGER decrement_unread_message_count_trigger_hard_delete
+AFTER DELETE ON public.messages
+FOR EACH ROW
+EXECUTE FUNCTION decrement_unread_message_count();
 
 
 
