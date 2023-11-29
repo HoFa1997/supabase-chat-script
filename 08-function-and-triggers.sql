@@ -953,3 +953,49 @@ EXECUTE FUNCTION create_notifications_for_new_message();
 -- WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
 -- EXECUTE FUNCTION handle_reaction_updates();
 
+
+
+
+
+CREATE OR REPLACE FUNCTION create_notifications_for_new_unique_reactions() RETURNS TRIGGER AS $$
+DECLARE
+    reaction_key TEXT;
+    new_reaction_entry JSONB;
+    reaction_exists BOOLEAN;
+BEGIN
+    -- Loop through each reaction type key in the updated reactions JSONB
+    FOR reaction_key IN SELECT jsonb_object_keys(NEW.reactions)
+    LOOP
+        -- Loop through each JSON object in the new reactions array for this key
+        FOR new_reaction_entry IN SELECT jsonb_array_elements(NEW.reactions -> reaction_key)
+        LOOP
+            -- Assume the reaction is new until found in the old reactions
+            reaction_exists := FALSE;
+
+            -- Check if this reaction entry is already in the old reactions
+            IF OLD.reactions ? reaction_key THEN
+                reaction_exists := EXISTS (
+                    SELECT 1 
+                    FROM jsonb_array_elements(OLD.reactions -> reaction_key) AS old_entry
+                    WHERE (old_entry ->> 'user_id') = (new_reaction_entry ->> 'user_id')
+                );
+            END IF;
+
+            -- If the reaction is new, create a notification
+            IF NOT reaction_exists THEN
+                INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
+                VALUES (OLD.user_id, 'reaction', NEW.id, NEW.channel_id, truncate_content(NEW.content), NOW());
+            END IF;
+        END LOOP;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trigger_on_reaction_update_for_notifications
+AFTER UPDATE OF reactions ON public.messages
+FOR EACH ROW
+WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
+EXECUTE FUNCTION create_notifications_for_new_reactions();
