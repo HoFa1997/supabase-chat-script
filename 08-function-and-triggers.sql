@@ -876,22 +876,28 @@ BEGIN
         END LOOP;
     END IF;
 
-    -- If no specific mentions are found, create a general message notification
-    -- for all channel members except the sender
+
+    -- If no mentions (like '@username' or '@everyone') are found in the message,
+    -- then this block creates notifications for channel members. Two types of notifications are created:
+    -- 1. 'reply' type for the user who is the owner of the original message being replied to.
+    -- 2. 'message' type for all other channel members.
+    -- These notifications are only created for channel members who have not muted in-app notifications
+    -- and who are not the sender of the new message.
     IF NOT mention_found THEN
         INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
         SELECT 
-            member_id, 
+            cm.member_id, 
             CASE 
-                WHEN NEW.reply_to_message_id IS NOT NULL THEN 'reply'::notification_category
+                WHEN NEW.reply_to_message_id IS NOT NULL AND m.user_id = cm.member_id THEN 'reply'::notification_category
                 ELSE 'message'::notification_category
             END, 
             NEW.id, 
             NEW.channel_id, 
             truncated_content, 
             NOW()
-        FROM public.channel_members
-        WHERE channel_id = NEW.channel_id AND member_id != NEW.user_id AND mute_in_app_notifications = FALSE;
+        FROM public.channel_members cm
+        LEFT JOIN public.messages m ON m.id = NEW.reply_to_message_id
+        WHERE cm.channel_id = NEW.channel_id AND cm.member_id != NEW.user_id AND cm.mute_in_app_notifications = FALSE;
     END IF;
 
     RETURN NEW;
