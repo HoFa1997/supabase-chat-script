@@ -51,14 +51,16 @@ COMMENT ON TABLE public.messages IS 'Contains individual messages sent by users,
 -- ]
 
 -- const reactions = {
---    '😄': ['user_id1', 'user_id2', 'user_id3'],
---    '👍': ['user_id1', 'user_id2', 'user_id3'],
--- }
--- OR
--- const reactions = {
---    '😄': [
---     {user_id: 'user_id1', created_at: '2021-01-01T00:00:00.000Z'},
+--   "👍": [
+--     {
+--       "user_id": "35477c6b-f9a0-4bad-af0b-545c99b33fae",
+--       "created_at": "2023-11-29T18:38:50.60264+00:00"
+--     }
 --   ],
---    '👍': ['user_id1', 'user_id2', user_id3],
+--   "😄": [
+--     {
+--       "user_id": "c2e3e9e7-d0e8-4960-9b05-d263deb2722f",
+--       "created_at": "2023-11-29T18:38:50.60264+00:00"
+--     }
+--   ]
 -- }
-
