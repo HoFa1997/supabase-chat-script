@@ -1005,3 +1005,25 @@ AFTER UPDATE OF reactions ON public.messages
 FOR EACH ROW
 WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
 EXECUTE FUNCTION create_notifications_for_new_reactions();
+
+
+
+
+
+CREATE OR REPLACE FUNCTION update_edited_at() RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the content or html column has been updated
+    IF OLD.content IS DISTINCT FROM NEW.content OR OLD.html IS DISTINCT FROM NEW.html THEN
+        -- Update the edited_at timestamp
+        NEW.edited_at := NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trigger_update_edited_at
+BEFORE UPDATE OF content, html ON public.messages
+FOR EACH ROW
+EXECUTE FUNCTION update_edited_at();

@@ -399,7 +399,7 @@ WHERE id = '5716352d-9380-49aa-9509-71e06f8b3d23';
 
 /*
     -----------------------------------------
-    13. Soft Delete a Message
+    12. Soft Delete a Message
        Expectation: 
        This scenario tests the soft deletion of a message within the application, focusing on the comprehensive effects of such an action.
        Specifically, it examines the following outcomes:
@@ -485,3 +485,27 @@ SELECT * FROM public.messages WHERE reply_to_message_id = 'de4b69f5-a304-4afa-80
 SELECT * FROM public.channel_members WHERE channel_id = '4d582754-4d72-48f8-9e72-f6aa63dacada';
 
 
+/*
+    -----------------------------------------
+    13. update the messgae content
+        Expectation: 
+            1. The message content should be updated.
+            2. The message preview should be updated.
+            3. The edited_at timestamp should be updated.
+    -----------------------------------------
+*/
+
+-- step 1: create a message
+INSERT INTO public.messages (id, content, channel_id, user_id)
+VALUES
+(
+    '2ed171d6-7247-46b2-8f6f-7703cf2634bf', -- ID
+    'Exciting news about upcoming features!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+);
+
+-- step 2: update the content of the message
+UPDATE public.messages
+SET content = 'Exciting news about upcoming features! I am so excited to share this with you all. Stay tuned for more updates!'
+WHERE id = '2ed171d6-7247-46b2-8f6f-7703cf2634bf';
