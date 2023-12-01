@@ -75,6 +75,7 @@ CREATE TYPE notification_category AS ENUM (
     'message',
     'reply',
     'reaction',
+    'thread_message',
     'channel_event',
     'direct_message',
     'invitation',
