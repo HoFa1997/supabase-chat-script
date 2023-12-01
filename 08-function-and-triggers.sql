@@ -272,7 +272,7 @@ CREATE OR REPLACE FUNCTION decrement_unread_message_count() RETURNS TRIGGER AS $
 DECLARE
     channel_member RECORD;
     notification_count INT;
-    channel_id_used uid;
+    channel_id_used UUID;
 BEGIN
     -- Determine whether it's a soft delete (update) or hard delete
     IF TG_OP = 'DELETE' THEN
@@ -1004,7 +1004,7 @@ CREATE TRIGGER trigger_on_reaction_update_for_notifications
 AFTER UPDATE OF reactions ON public.messages
 FOR EACH ROW
 WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
-EXECUTE FUNCTION create_notifications_for_new_reactions();
+EXECUTE FUNCTION create_notifications_for_new_unique_reactions();
 
 
 
