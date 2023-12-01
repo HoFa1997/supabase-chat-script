@@ -8,6 +8,7 @@ CREATE INDEX idx_messages_channel_id ON public.messages (channel_id);
 CREATE INDEX idx_messages_user_id ON public.messages (user_id);
 CREATE INDEX idx_messages_updated_at ON public.messages (updated_at);
 CREATE INDEX idx_messages_type ON public.messages (type);
+CREATE INDEX idx_thread_id_created_at ON public.messages(thread_id, created_at);
 
 -- Composite Index on public.messages
 -- Optimizes query performance for filtering by channel_id and sorting by updated_at.

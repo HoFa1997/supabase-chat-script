@@ -18,6 +18,10 @@ CREATE TABLE public.messages (
     reply_to_message_id    UUID REFERENCES public.messages(id) ON DELETE SET NULL, -- The ID of the message this message is replying to, if any.
     replied_message_preview TEXT, -- Preview text of the message being replied to.
     original_message_id    UUID REFERENCES public.messages(id) ON DELETE SET NULL -- ID of the original message if this is a forwarded message.
+    thread_id              UUID REFERENCES public.messages(id) ON DELETE SET NULL -- ID of the thread this message belongs to.
+    thread_depth           INT DEFAULT 0 -- Depth of the message in the thread.
+    is_thread_root         BOOLEAN DEFAULT false -- Indicates if the message is the root of a thread.
+    thread_owner_user_id   UUID REFERENCES public.users ON DELETE SET NULL -- ID of the user who owns/opens the thread.
 );
 
 COMMENT ON TABLE public.messages IS 'Contains individual messages sent by users, including their content, type, and associated metadata.';

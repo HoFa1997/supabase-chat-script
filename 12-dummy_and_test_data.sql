@@ -509,3 +509,88 @@ VALUES
 UPDATE public.messages
 SET content = 'Exciting news about upcoming features! I am so excited to share this with you all. Stay tuned for more updates!'
 WHERE id = '2ed171d6-7247-46b2-8f6f-7703cf2634bf';
+
+
+
+/*
+    -----------------------------------------
+    14. thread a message
+        Expectation: 
+            1. The message should be threaded.
+            2. The message preview in channel should not be update.
+    -----------------------------------------
+*/
+
+-- step 1: create a message
+INSERT INTO public.messages (id, content, channel_id, user_id)
+VALUES
+(
+    '5fb62876-c099-4284-8295-f3e898ad88e0', -- ID
+    'Has anyone heard about the new Netflix series?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+);
+
+
+-- step 2: reply to the message
+INSERT INTO public.messages (id, channel_id, user_id, content, reply_to_message_id)
+values
+(   
+    'd9ad17c9-6431-47ee-8ef7-09d7a1abb68c', -- ID
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: lisa
+    'Please do not spoil it!', -- Content
+    '5fb62876-c099-4284-8295-f3e898ad88e0' -- original message id
+);
+
+-- step 3: open a thread (update the first message), we will update the is_threaded_root to true with trigger
+UPDATE public.messages
+SET 
+    thread_id = '5fb62876-c099-4284-8295-f3e898ad88e0',
+    thread_owner_user_id = 'c2e3e9e7-d0e8-4960-9b05-d263deb2722f'
+WHERE id = '5fb62876-c099-4284-8295-f3e898ad88e0';
+
+
+-- step 4: message to the thread
+INSERT INTO public.messages (id, channel_id, user_id, content, thread_id)
+values
+(
+    '5f1ae43c-4cd5-4d97-bad8-2e9607ade415', -- ID
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', -- User: emma
+    'I have not heard about it yet.', -- Content
+    '5fb62876-c099-4284-8295-f3e898ad88e0' -- thread id
+);
+
+-- step 5: message to the thread
+INSERT INTO public.messages (id, channel_id, user_id, content, thread_id)
+values
+(
+    '94f6903b-b13d-4b37-b757-c4dab8c05b07', -- ID
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: lisa
+    'New franchise for Stranger Things?', -- Content
+    '5fb62876-c099-4284-8295-f3e898ad88e0' -- thread id
+);
+
+-- step 6: reply to the lisa message
+INSERT INTO public.messages (id, channel_id, user_id, content, thread_id, reply_to_message_id)
+values
+(
+    'f5ac64c5-7b1f-486c-8cb6-f7c18e2569ba', -- ID
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae', -- User: philip
+    'Yes! Thats a new thing! But we have a new surprise. I heard from the bosss call that they are going to create a new franchise from "The Boys" series!', -- Content
+    '5fb62876-c099-4284-8295-f3e898ad88e0', -- thread id
+    '94f6903b-b13d-4b37-b757-c4dab8c05b07' -- original message id
+);
+
+-- step 7: reaction to the thread message, emma
+UPDATE public.messages
+SET reactions = jsonb_set(
+    COALESCE(reactions, '{}'), 
+    '{👍}', 
+    COALESCE(reactions->'👍', '[]') || jsonb_build_array(jsonb_build_object('user_id', '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', 'created_at', current_timestamp)),
+    true
+)
+WHERE id = '5fb62876-c099-4284-8295-f3e898ad88e0';
