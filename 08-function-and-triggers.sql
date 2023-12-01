@@ -344,116 +344,6 @@ EXECUTE FUNCTION decrement_unread_message_count();
 
 
 
-
-
-
-
-
-
-
-
--- CREATE OR REPLACE FUNCTION handle_message_delete() RETURNS TRIGGER AS $$
--- DECLARE
---     channel_member RECORD;
---     deleted_message_time TIMESTAMP;
---     truncated_content TEXT;
---     notification_count INT;
--- BEGIN
-
---     -- Set deleted_at timestamp for soft delete
---     NEW.deleted_at := NOW();
-
---     -- Handling Soft Delete (additional actions)
---     IF TG_OP = 'UPDATE' THEN
---         -- Truncate content if necessary for soft deleted messages
---         truncated_content := truncate_content(NEW.content);
-
---         -- Delete pinned message
---         DELETE FROM public.pinned_messages WHERE message_id = OLD.id;
-
---         -- Delete associated notifications
---         DELETE FROM public.notifications WHERE message_id = OLD.id;
-
---         -- Update reply previews
---         UPDATE public.messages
---         SET replied_message_preview = 'The message has been deleted'
---         WHERE reply_to_message_id = OLD.id;
-
-
---         -- Update last message preview in the channel
---         WITH last_msg AS (
---             SELECT id, content
---             FROM public.messages
---             WHERE channel_id = OLD.channel_id AND deleted_at IS NULL AND id <> OLD.id
---             ORDER BY created_at DESC
---             LIMIT 1
---         )
---         UPDATE public.channels
---         SET last_message_preview = COALESCE(
---             (SELECT LEFT(content, 70) FROM last_msg), NULL),
---             last_activity_at = NOW()
---         WHERE id = OLD.channel_id;
-
-
---         RETURN NEW;
---     END IF;
-
---         -- Decrement unread message count for channel members
---     FOR channel_member IN SELECT * FROM public.channel_members WHERE channel_id = NEW.channel_id LOOP
---         -- Count the notifications associated with the message for this particular user
---         SELECT COUNT(*) INTO notification_count 
---         FROM public.notifications 
---         WHERE user_id = channel_member.member_id AND channel_id = NEW.channel_id  AND read_at IS NULL;
-
---         UPDATE public.channel_members
---         SET unread_message_count = notification_count
---         WHERE channel_id = NEW.channel_id AND member_id = channel_member.member_id;
---     END LOOP;
-
---     RETURN OLD;
--- END;
--- $$ LANGUAGE plpgsql;
-
-
-
-
-
-
-
--- CREATE TRIGGER handle_message_delete_trigger
--- BEFORE UPDATE OF deleted_at OR DELETE ON public.messages
--- FOR EACH ROW
--- EXECUTE FUNCTION handle_message_delete();
-
--- COMMENT ON TRIGGER handle_message_delete_trigger ON public.messages IS 'Trigger to handle unread message counts adjustment in channel_members and additional actions on message soft-delete or delete.';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
     --------------------------------------------------------
     Trigger Function: update_message_preview_on_edit
@@ -490,7 +380,7 @@ BEGIN
     -- Update last message preview in the channel of the edited message
     UPDATE public.channels
     SET last_message_preview = truncated_content
-    WHERE id = NEW.channel_id;
+    WHERE id = NEW.channel_id AND thread_id IS NULL;
 
     RETURN NEW;
 END;
@@ -509,7 +399,6 @@ AFTER UPDATE OF content ON public.messages
 FOR EACH ROW
 WHEN (OLD.content IS DISTINCT FROM NEW.content)
 EXECUTE FUNCTION update_message_preview_on_edit();
-
 
 
 
@@ -536,7 +425,7 @@ BEGIN
 
     UPDATE public.channels
     SET last_message_preview = truncated_content
-    WHERE id = NEW.channel_id;
+    WHERE id = NEW.channel_id AND thread_id IS NULL;
 
     RETURN NEW;
 END;
@@ -968,8 +857,6 @@ EXECUTE FUNCTION create_notifications_for_new_message();
 -- FOR EACH ROW
 -- WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
 -- EXECUTE FUNCTION handle_reaction_updates();
-
-
 
 
 
