@@ -531,6 +531,7 @@ BEGIN
 
     -- Populate the new message record with content and media from the original
     NEW.content := original_message.content;
+    NEw.html := original_message.html;
     NEW.medias := original_message.medias;
 
     -- Clear other fields not relevant for a forwarded message
@@ -808,56 +809,6 @@ CREATE TRIGGER trigger_on_new_message_for_notifications
 AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION create_notifications_for_new_message();
-
-
-
-
--- CREATE OR REPLACE FUNCTION handle_reaction_updates() RETURNS TRIGGER AS $$
--- DECLARE
---     message_owner_id UUID;
---     reaction_key TEXT;
---     user_id TEXT;
--- BEGIN
---     -- Only proceed if it's an update operation and reactions have changed
---     IF TG_OP = 'UPDATE' AND OLD.reactions IS DISTINCT FROM NEW.reactions THEN
---         -- Get the ID of the user who owns the message
---         SELECT user_id INTO message_owner_id FROM public.messages WHERE id = NEW.id;
-
---         -- Iterate over each emoji key in the reactions
---         FOR reaction_key IN SELECT jsonb_object_keys(NEW.reactions) LOOP
---             -- Check for new reactions
---             FOREACH user_id IN ARRAY 
---                 SELECT jsonb_array_elements_text(NEW.reactions -> reaction_key)
---                 EXCEPT
---                 SELECT jsonb_array_elements_text(OLD.reactions -> reaction_key)
---             LOOP
---                 -- Insert a notification for the new reaction
---                 INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
---                 VALUES (message_owner_id, 'reaction', NEW.id, NEW.channel_id, LEFT(NEW.content, 100), NOW());
---             END LOOP;
-
---             -- Check for removed reactions
---             FOREACH user_id IN ARRAY 
---                 SELECT jsonb_array_elements_text(OLD.reactions -> reaction_key)
---                 EXCEPT
---                 SELECT jsonb_array_elements_text(NEW.reactions -> reaction_key)
---             LOOP
---                 -- Delete the notification for the removed reaction
---                 DELETE FROM public.notifications
---                 WHERE type = 'reaction' AND message_id = NEW.id 
---                   AND user_id = message_owner_id AND extra_info = user_id; -- Adjust as necessary
---             END LOOP;
---         END LOOP;
---     END IF;
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE TRIGGER trigger_on_reaction_update
--- AFTER UPDATE OF reactions ON public.messages
--- FOR EACH ROW
--- WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
--- EXECUTE FUNCTION handle_reaction_updates();
 
 
 
