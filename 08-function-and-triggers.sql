@@ -217,6 +217,7 @@ COMMENT ON TRIGGER increment_unread_count_after_new_message ON public.messages I
 CREATE OR REPLACE FUNCTION handle_soft_delete() RETURNS TRIGGER AS $$
 DECLARE
     truncated_content TEXT;
+    currentMetadata JSONB;
 BEGIN
     -- Set deleted_at timestamp for soft delete
     NEW.deleted_at := NOW();
@@ -248,6 +249,20 @@ BEGIN
         SET last_message_preview = truncated_content,
             last_activity_at = NOW()
         WHERE id = OLD.channel_id;
+
+                -- Remove the reply from the metadata of the original message
+        SELECT metadata INTO currentMetadata FROM public.messages
+        WHERE id = NEW.reply_to_message_id;
+
+        IF currentMetadata IS NOT NULL THEN
+            -- Remove the deleted message ID from the 'replied' array
+            currentMetadata := jsonb_set(currentMetadata, '{replied}', (currentMetadata->'replied') - NEW.id::text);
+
+            -- Update the original message's metadata
+            UPDATE public.messages
+            SET metadata = currentMetadata
+            WHERE id = NEW.reply_to_message_id;
+        END IF;
 
         RETURN NEW;
     END IF;
