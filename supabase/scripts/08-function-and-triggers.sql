@@ -899,3 +899,31 @@ EXECUTE FUNCTION update_edited_at();
 
 
 
+-- Function to update message metadata
+CREATE OR REPLACE FUNCTION update_message_metadata_on_pin()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_metadata JSONB;
+BEGIN
+    -- Retrieve current metadata from the messages table for the given message_id
+    SELECT metadata INTO current_metadata FROM public.messages WHERE id = NEW.message_id;
+
+    -- Check if metadata is null and initialize it if necessary
+    IF current_metadata IS NULL THEN
+        current_metadata := '{}'::JSONB;
+    END IF;
+
+    -- Update the metadata with "pinned": true
+    current_metadata := jsonb_set(current_metadata, '{pinned}', 'true');
+
+    -- Update the messages table
+    UPDATE public.messages SET metadata = current_metadata WHERE id = NEW.message_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger on the pinned_messages table
+CREATE TRIGGER trigger_update_message_on_pin
+AFTER INSERT ON public.pinned_messages
+FOR EACH ROW EXECUTE FUNCTION update_message_metadata_on_pin();
