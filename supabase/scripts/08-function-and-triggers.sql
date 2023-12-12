@@ -301,7 +301,7 @@ BEGIN
         -- Count the notifications associated with the message for this particular user
         SELECT COUNT(*) INTO notification_count 
         FROM public.notifications 
-        WHERE user_id = channel_member.member_id AND channel_id = channel_id_used AND read_at IS NULL;
+        WHERE receiver_user_id = channel_member.member_id AND channel_id = channel_id_used AND read_at IS NULL;
 
         UPDATE public.channel_members
         SET unread_message_count = notification_count
@@ -393,9 +393,11 @@ BEGIN
     WHERE original_message_id = NEW.id;
 
     -- Update last message preview in the channel of the edited message
-    UPDATE public.channels
-    SET last_message_preview = truncated_content
-    WHERE id = NEW.channel_id AND thread_id IS NULL;
+    IF NEW.thread_id IS NULL THEN
+        UPDATE public.channels
+        SET last_message_preview = truncated_content
+        WHERE id = NEW.channel_id;
+    END IF;
 
     RETURN NEW;
 END;
@@ -431,22 +433,22 @@ CREATE OR REPLACE FUNCTION update_channel_preview_on_new_message() RETURNS TRIGG
 DECLARE
     truncated_content TEXT; -- Declaration of the variable
 BEGIN
-    -- Update the last message preview in the channel with the new message content
-    -- Note: We can also add truncation logic here if required
+    -- Check if the message is part of a thread. If it is, don't update the channel preview.
+    IF NEW.thread_id IS NULL THEN
+        -- Update the last message preview in the channel with the new message content
+        -- Note: We can also add truncation logic here if required
+        truncated_content := truncate_content(NEW.content);
 
-
-    truncated_content := truncate_content(NEW.content);
-
-
-    UPDATE public.channels
-    SET last_message_preview = truncated_content
-    WHERE id = NEW.channel_id AND thread_id IS NULL;
+        UPDATE public.channels
+        SET last_message_preview = truncated_content
+        WHERE id = NEW.channel_id;
+    END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION update_channel_preview_on_new_message() IS 'Function to update the last message preview in a channel when a new message is inserted.';
+COMMENT ON FUNCTION update_channel_preview_on_new_message() IS 'Function to update the last message preview in a channel when a new message is inserted, except for messages that are part of a thread.';
 
 
 /*
@@ -519,7 +521,7 @@ BEGIN
   -- Check if the message is a forward by the presence of original_message_id
   IF NEW.original_message_id IS NOT NULL THEN
     -- Retrieve content, media, and metadata from the original message
-    SELECT content, medias, metadata INTO original_message 
+    SELECT content, html, medias, metadata INTO original_message 
     FROM public.messages 
     WHERE id = NEW.original_message_id;
 
@@ -546,8 +548,8 @@ BEGIN
 
     -- Populate the new message record with content and media from the original
     NEW.content := original_message.content;
-    NEw.html := original_message.html;
     NEW.medias := original_message.medias;
+    NEW.html := original_message.html;
 
     -- Clear other fields not relevant for a forwarded message
     NEW.reactions := null;
@@ -774,8 +776,8 @@ BEGIN
         mention_found := TRUE;
         -- Check if the mentioned user has muted notifications
         IF (SELECT mute_in_app_notifications FROM public.channel_members WHERE channel_id = NEW.channel_id AND member_id = mentioned_user_id) = FALSE THEN
-            INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
-            VALUES (mentioned_user_id, 'mention', NEW.id, NEW.channel_id, truncated_content, NOW());
+            INSERT INTO public.notifications (receiver_user_id, sender_user_id, type, message_id, channel_id, message_preview, created_at)
+            VALUES (mentioned_user_id, NEW.user_id, 'mention', NEW.id, NEW.channel_id, truncated_content, NOW());
         END IF;
     END LOOP;
 
@@ -785,8 +787,8 @@ BEGIN
         FOR channel_member IN SELECT cm.member_id FROM public.channel_members cm WHERE cm.channel_id = NEW.channel_id AND cm.member_id != NEW.user_id LOOP
             -- Check if the channel member has muted notifications
             IF (SELECT mute_in_app_notifications FROM public.channel_members WHERE channel_id = NEW.channel_id AND member_id = channel_member.member_id) = FALSE THEN
-                INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
-                VALUES (channel_member.member_id, 'channel_event', NEW.id, NEW.channel_id, truncated_content, NOW());
+                INSERT INTO public.notifications (receiver_user_id, sender_user_id, type, message_id, channel_id, message_preview, created_at)
+                VALUES (channel_member.member_id, NEW.user_id, 'channel_event', NEW.id, NEW.channel_id, truncated_content, NOW());
             END IF;
         END LOOP;
     END IF;
@@ -799,9 +801,10 @@ BEGIN
     -- These notifications are only created for channel members who have not muted in-app notifications
     -- and who are not the sender of the new message.
     IF NOT mention_found THEN
-        INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
+        INSERT INTO public.notifications (receiver_user_id, sender_user_id, type, message_id, channel_id, message_preview, created_at)
         SELECT 
             cm.member_id, 
+            NEW.user_id,
             CASE 
                 WHEN NEW.thread_id IS NOT NULL THEN 'thread_message'::notification_category
                 WHEN NEW.reply_to_message_id IS NOT NULL AND m.user_id = cm.member_id THEN 'reply'::notification_category
@@ -853,8 +856,8 @@ BEGIN
 
             -- If the reaction is new, create a notification
             IF NOT reaction_exists THEN
-                INSERT INTO public.notifications (user_id, type, message_id, channel_id, message_preview, created_at)
-                VALUES (OLD.user_id, 'reaction', NEW.id, NEW.channel_id, truncate_content(NEW.content), NOW());
+                INSERT INTO public.notifications (receiver_user_id, sender_user_id, type, message_id, channel_id, message_preview, created_at)
+                VALUES (OLD.user_id, NEW.user_id, 'reaction', NEW.id, NEW.channel_id, truncate_content(NEW.content), NOW());
             END IF;
         END LOOP;
     END LOOP;

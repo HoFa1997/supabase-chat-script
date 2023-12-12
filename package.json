@@ -1,0 +1,11 @@
+{
+  "name": "supabase-slack-clone",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/HoFa1997/supabase-chat-script.git",
+  "author": "hossein <marzban98@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "supabase": "^1.123.0"
+  }
+}

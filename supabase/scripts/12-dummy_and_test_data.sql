@@ -260,7 +260,7 @@ VALUES(
 INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
 values
 (   
-    '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86', -- ID
+    'b9a33e13-3fd0-43f7-b46e-1291253587ad', -- ID
     'dc6a0f60-5260-456b-a5c7-b799cece8807', -- Channel: openai
     '35477c6b-f9a0-4bad-af0b-545c99b33fae', -- User: philip
     '0486ed3d-8e48-49ed-b8af-2387909f642f' -- original message id
@@ -279,7 +279,7 @@ values
     '4701aef9-cfcc-45e2-80ec-e0f3ffdc25dc', -- ID
     '70ceab8b-2cf6-4004-8561-219de9b11ec2', -- Channel: movie-night
     '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', -- User: Emma
-    '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86' -- original message id
+    'b9a33e13-3fd0-43f7-b46e-1291253587ad' -- original message id
 );
 
 -- step 8: lisa react to the forwarded message
@@ -311,7 +311,6 @@ VALUES(
     'I am! Cant wait to watch it.', -- Content
     '4701aef9-cfcc-45e2-80ec-e0f3ffdc25dc' -- original message id
 );
-
 
 /*
     -----------------------------------------
@@ -378,13 +377,13 @@ values
 INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
 values
 (
-    '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86', -- ID
+    'd00a10a3-e476-4067-8a66-689d3cc4b0f5', -- ID
     'dc6a0f60-5260-456b-a5c7-b799cece8807', -- Channel: openai
     'dc7d6520-8408-4a8b-b628-78d5f82b8b62', -- User: Jhon
     '5716352d-9380-49aa-9509-71e06f8b3d23' -- original message id
 ),
 (
-    'bb27aacc-e31a-4664-9606-103972702dd5', -- ID
+    'de4eda37-f6a1-4ffa-ab2a-089025d2f0f9', -- ID
     '1292efc2-0cdc-470c-9364-ba76f19ce75d', -- Channel: tech-talk
     'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: Lisa
     '5716352d-9380-49aa-9509-71e06f8b3d23' -- original message id
@@ -407,6 +406,7 @@ WHERE id = '5716352d-9380-49aa-9509-71e06f8b3d23';
        2. Any pinned instance of the soft-deleted message should be automatically removed from the 'public.pinned_messages' table.
        3. Replies and forwardings of the soft-deleted message should remain intact but should reflect the deletion status in any associated previews or metadata.
        4. The 'unread_message_count' in 'public.channel_members' should be decremented for members who have not read the message, ensuring accurate read status tracking.
+       5. replied in the metadata must be recalculate
     -----------------------------------------
 */
 
@@ -452,13 +452,13 @@ values
 INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
 values
 (
-    '8c6a047a-4e0f-46eb-8e7d-0f4357fabc86', -- ID
+    '97ebede7-9107-4636-8060-45b08db6ce6a', -- ID
     'dc6a0f60-5260-456b-a5c7-b799cece8807', -- Channel: openai
     'dc7d6520-8408-4a8b-b628-78d5f82b8b62', -- User: Jhon
     'de4b69f5-a304-4afa-80cc-89882d612d20' -- original message id
 ),
 (
-    'bb27aacc-e31a-4664-9606-103972702dd5', -- ID
+    'add87e8b-9e15-478c-8bb5-e7f074c9568c', -- ID
     '1292efc2-0cdc-470c-9364-ba76f19ce75d', -- Channel: tech-talk
     'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', -- User: Lisa
     'de4b69f5-a304-4afa-80cc-89882d612d20' -- original message id
@@ -499,7 +499,7 @@ SELECT * FROM public.channel_members WHERE channel_id = '4d582754-4d72-48f8-9e72
 INSERT INTO public.messages (id, content, channel_id, user_id)
 VALUES
 (
-    '2ed171d6-7247-46b2-8f6f-7703cf2634bf', -- ID
+    '4b858af7-fceb-4f94-a8fb-b0af4c2a3cde', -- ID
     'Exciting news about upcoming features!', -- Content
     '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
     '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
@@ -508,7 +508,7 @@ VALUES
 -- step 2: update the content of the message
 UPDATE public.messages
 SET content = 'Exciting news about upcoming features! I am so excited to share this with you all. Stay tuned for more updates!'
-WHERE id = '2ed171d6-7247-46b2-8f6f-7703cf2634bf';
+WHERE id = '4b858af7-fceb-4f94-a8fb-b0af4c2a3cde';
 
 
 
@@ -518,6 +518,7 @@ WHERE id = '2ed171d6-7247-46b2-8f6f-7703cf2634bf';
         Expectation: 
             1. The message should be threaded.
             2. The message preview in channel should not be update.
+            3. --
     -----------------------------------------
 */
 

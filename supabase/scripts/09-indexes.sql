@@ -30,6 +30,6 @@ CREATE INDEX idx_channel_members_channel_id ON public.channel_members (channel_i
 CREATE INDEX idx_channel_members_member_id ON public.channel_members (member_id);
 
 -- Indexes on public.notifications Table
--- Optimizes query performance for user_id and created_at.
-CREATE INDEX idx_notifications_user_id ON public.notifications (user_id);
+-- Optimizes query performance for receiver_user_id and created_at.
+CREATE INDEX idx_notifications_receiver_user_id ON public.notifications (receiver_user_id);
 CREATE INDEX idx_notifications_created_at ON public.notifications (created_at);
