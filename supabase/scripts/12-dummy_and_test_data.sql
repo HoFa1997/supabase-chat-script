@@ -257,7 +257,7 @@ VALUES(
 );
 
 -- step 6: forward the message in to two channels
-INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
+INSERT INTO public.messages (id, channel_id, user_id, origin_message_id)
 values
 (   
     'b9a33e13-3fd0-43f7-b46e-1291253587ad', -- ID
@@ -273,7 +273,7 @@ values
 );
 
 -- step 7: forward the forwarded message
-INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
+INSERT INTO public.messages (id, channel_id, user_id, origin_message_id)
 values
 (
     '4701aef9-cfcc-45e2-80ec-e0f3ffdc25dc', -- ID
@@ -374,7 +374,7 @@ values
 );
 
 -- step 3: forward the message
-INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
+INSERT INTO public.messages (id, channel_id, user_id, origin_message_id)
 values
 (
     'd00a10a3-e476-4067-8a66-689d3cc4b0f5', -- ID
@@ -449,7 +449,7 @@ values
 
 
 -- step 4: forward the message
-INSERT INTO public.messages (id, channel_id, user_id, original_message_id)
+INSERT INTO public.messages (id, channel_id, user_id, origin_message_id)
 values
 (
     '97ebede7-9107-4636-8060-45b08db6ce6a', -- ID
@@ -479,7 +479,7 @@ SELECT * FROM public.pinned_messages WHERE message_id = 'de4b69f5-a304-4afa-80cc
 
 -- 3. Check the status of replies and forwards related to the soft-deleted message.
 SELECT * FROM public.messages WHERE reply_to_message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20'
-   OR original_message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
+   OR origin_message_id = 'de4b69f5-a304-4afa-80cc-89882d612d20';
 
 -- 4. Validate the updated unread_message_count for channel members.
 SELECT * FROM public.channel_members WHERE channel_id = '4d582754-4d72-48f8-9e72-f6aa63dacada';

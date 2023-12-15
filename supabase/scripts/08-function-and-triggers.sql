@@ -390,7 +390,7 @@ BEGIN
     -- Update previews for messages that are forwards of the edited message
     UPDATE public.messages
     SET content = NEW.content
-    WHERE original_message_id = NEW.id;
+    WHERE origin_message_id = NEW.id;
 
     -- Update last message preview in the channel of the edited message
     IF NEW.thread_id IS NULL THEN
@@ -518,23 +518,24 @@ DECLARE
   forwarding_user RECORD;
   user_details JSONB;
 BEGIN
-  -- Check if the message is a forward by the presence of original_message_id
-  IF NEW.original_message_id IS NOT NULL THEN
+  -- Check if the message is a forward by the presence of origin_message_id
+  IF NEW.origin_message_id IS NOT NULL THEN
     -- Retrieve content, media, and metadata from the original message
     SELECT content, html, medias, metadata INTO original_message 
     FROM public.messages 
-    WHERE id = NEW.original_message_id;
+    WHERE id = NEW.origin_message_id;
 
     -- Retrieve the forwarding user's details
-    SELECT id, username, full_name INTO forwarding_user
+    SELECT id, username, full_name, avatar_url INTO forwarding_user
     FROM public.users
     WHERE id = NEW.user_id; -- Assuming NEW.user_id is the ID of the user who is forwarding the message
 
     -- Prepare user details JSON object
     user_details := jsonb_build_object(
-        'user_id', forwarding_user.id,
+        'id', forwarding_user.id,
         'username', forwarding_user.username,
         'full_name', forwarding_user.full_name
+        'avatar_url', forwarding_user.avatar_url
     );
 
     -- Check if original_message.metadata has 'forwarding_chain' key
@@ -904,9 +905,10 @@ CREATE OR REPLACE FUNCTION update_message_metadata_on_pin()
 RETURNS TRIGGER AS $$
 DECLARE
     current_metadata JSONB;
+    message_content TEXT;
 BEGIN
-    -- Retrieve current metadata from the messages table for the given message_id
-    SELECT metadata INTO current_metadata FROM public.messages WHERE id = NEW.message_id;
+    -- Retrieve current metadata and content from the messages table for the given message_id
+    SELECT metadata, content INTO current_metadata, message_content FROM public.messages WHERE id = NEW.message_id;
 
     -- Check if metadata is null and initialize it if necessary
     IF current_metadata IS NULL THEN
@@ -916,14 +918,156 @@ BEGIN
     -- Update the metadata with "pinned": true
     current_metadata := jsonb_set(current_metadata, '{pinned}', 'true');
 
-    -- Update the messages table
+    -- Update the messages table with new metadata
     UPDATE public.messages SET metadata = current_metadata WHERE id = NEW.message_id;
+
+    -- Set the content of the pinned message
+    NEW.content :=  truncate_content(message_content) ;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+
 -- Trigger on the pinned_messages table
 CREATE TRIGGER trigger_update_message_on_pin
-AFTER INSERT ON public.pinned_messages
+BEFORE INSERT ON public.pinned_messages
 FOR EACH ROW EXECUTE FUNCTION update_message_metadata_on_pin();
+
+
+
+-- Function to update message metadata when a pinned message is deleted
+CREATE OR REPLACE FUNCTION update_message_metadata_on_unpin()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_metadata JSONB;
+BEGIN
+    -- Retrieve current metadata from the messages table for the given message_id
+    SELECT metadata INTO current_metadata FROM public.messages WHERE id = OLD.message_id;
+
+    -- Check if metadata is null and initialize it if necessary
+    IF current_metadata IS NULL THEN
+        current_metadata := '{}'::JSONB;
+    END IF;
+
+    -- Update the metadata with "pinned": false
+    current_metadata := jsonb_set(current_metadata, '{pinned}', 'false');
+
+    -- Update the messages table
+    UPDATE public.messages SET metadata = current_metadata WHERE id = OLD.message_id;
+
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger on the pinned_messages table for deletion
+CREATE TRIGGER trigger_update_message_on_unpin
+AFTER DELETE ON public.pinned_messages
+FOR EACH ROW EXECUTE FUNCTION update_message_metadata_on_unpin();
+
+
+
+CREATE OR REPLACE FUNCTION get_channel_aggregate_data(input_channel_id UUID)
+RETURNS TABLE(
+    channel_info JSONB,
+    last_messages JSONB,
+    member_count INT,
+    pinned_messages JSONB,
+    user_profile JSONB,
+    is_user_channel_member BOOLEAN,
+    channel_member_info JSONB
+) AS $$
+DECLARE
+    channel_result JSONB;
+    messages_result JSONB;
+    members_result INT;
+    pinned_result JSONB;
+    user_data_result JSONB;
+    is_member_result BOOLEAN;
+    channel_member_info_result JSONB;
+BEGIN
+
+    -- Query for channel information
+    SELECT json_build_object(
+               'id', c.id,
+               'slug', c.slug,
+               'name', c.name,
+               'created_by', c.created_by,
+               'description', c.description,
+               'member_limit', c.member_limit,
+               'is_avatar_set', c.is_avatar_set,
+               'allow_emoji_reactions', c.allow_emoji_reactions,
+               'mute_in_app_notifications', c.mute_in_app_notifications,
+               'type', c.type,
+               'metadata', c.metadata
+           ) INTO channel_result
+    FROM public.channels c
+    WHERE c.id = input_channel_id;
+
+    -- Query for the last 10 messages with user details
+    SELECT json_agg(t) INTO messages_result
+    FROM (
+        SELECT m.*, 
+               json_build_object(
+                   'id', u.id, 
+                   'username', u.username, 
+                   'fullname', u.full_name, 
+                   'avatar_url', u.avatar_url
+               ) AS user_details
+        FROM public.messages m
+        LEFT JOIN public.users u ON m.user_id = u.id
+        WHERE m.channel_id = input_channel_id AND m.deleted_at IS NULL
+        ORDER BY m.created_at DESC 
+        LIMIT 10
+    ) t;
+
+    -- Query for the count of channel members
+    SELECT COUNT(*) INTO members_result
+    FROM public.channel_members 
+    WHERE channel_id = input_channel_id;
+
+    -- Query for the pinned messages
+    SELECT json_agg(pm) INTO pinned_result
+    FROM public.pinned_messages pm
+    JOIN public.messages m ON pm.message_id = m.id
+    WHERE pm.channel_id = input_channel_id;
+
+    -- Query for the user data using auth.uid()
+    SELECT json_build_object(
+               'id', u.id,
+               'username', u.username,
+               'full_name', u.full_name,
+               'status', u.status,
+               'avatar_url', u.avatar_url,
+               'email', u.email,
+               'website', u.website,
+               'description', u.description
+           ) INTO user_data_result
+    FROM public.users u
+    WHERE u.id = auth.uid();
+
+    -- Attempt to get channel member details
+    SELECT json_build_object(
+            'last_read_message_id', cm.last_read_message_id,
+            'last_read_update', cm.last_read_update,
+            'joined_at', cm.joined_at,
+            'left_at', cm.left_at,
+            'mute_in_app_notifications', cm.mute_in_app_notifications,
+            'channel_member_role', cm.channel_member_role,
+            'unread_message_count', cm.unread_message_count
+        )
+    INTO channel_member_info_result
+    FROM public.channel_members cm
+    WHERE cm.channel_id = input_channel_id AND cm.member_id = auth.uid();
+
+    -- Set is_member_result based on whether channel_member_info_result is null
+    is_member_result := (channel_member_info_result IS NOT NULL);
+
+    -- Return the results including the user data
+    RETURN QUERY SELECT channel_result, messages_result, members_result, pinned_result, user_data_result, is_member_result, channel_member_info_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test
+-- SELECT * FROM get_channel_aggregate_data('99634205-5238-4ffc-90ec-c64be3ad25cf');
+

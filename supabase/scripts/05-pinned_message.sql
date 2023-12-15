@@ -6,6 +6,7 @@ CREATE TABLE public.pinned_messages (
     message_id    UUID NOT NULL REFERENCES public.messages ON DELETE CASCADE, -- The ID of the message that is pinned.
     pinned_at     TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL, -- Timestamp when the message was pinned.
     pinned_by     UUID NOT NULL REFERENCES public.users, -- The ID of the user who pinned the message.
+    content       TEXT NOT NULL, -- The content of the message that is pinned.
     UNIQUE (channel_id, message_id)
 );
 
