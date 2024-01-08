@@ -967,7 +967,10 @@ FOR EACH ROW EXECUTE FUNCTION update_message_metadata_on_unpin();
 
 
 
-CREATE OR REPLACE FUNCTION get_channel_aggregate_data(input_channel_id UUID)
+CREATE OR REPLACE FUNCTION get_channel_aggregate_data(
+    input_channel_id UUID,
+    message_limit INT DEFAULT 20 -- New parameter with default value
+)
 RETURNS TABLE(
     channel_info JSONB,
     last_messages JSONB,
@@ -1004,21 +1007,39 @@ BEGIN
     FROM public.channels c
     WHERE c.id = input_channel_id;
 
-    -- Query for the last 10 messages with user details
+    -- Query for the last 10 messages with user details, including replied message details
     SELECT json_agg(t) INTO messages_result
     FROM (
-        SELECT m.*, 
-               json_build_object(
-                   'id', u.id, 
-                   'username', u.username, 
-                   'fullname', u.full_name, 
-                   'avatar_url', u.avatar_url
-               ) AS user_details
+        SELECT m.*,
+            json_build_object(
+                'id', u.id, 
+                'username', u.username, 
+                'fullname', u.full_name, 
+                'avatar_url', u.avatar_url
+            ) AS user_details,
+            CASE
+                WHEN m.reply_to_message_id IS NOT NULL THEN
+                    (SELECT json_build_object(
+                            'message', json_build_object(
+                                'id', rm.id,
+                                'created_at', rm.created_at
+                            ),
+                            'user', json_build_object(
+                                'id', ru.id,
+                                'username', ru.username,
+                                'fullname', ru.full_name,
+                                'avatar_url', ru.avatar_url
+                            )
+                        ) FROM public.messages rm
+                        LEFT JOIN public.users ru ON rm.user_id = ru.id
+                        WHERE rm.id = m.reply_to_message_id)
+                ELSE NULL
+            END AS replied_message_details
         FROM public.messages m
         LEFT JOIN public.users u ON m.user_id = u.id
         WHERE m.channel_id = input_channel_id AND m.deleted_at IS NULL
         ORDER BY m.created_at DESC 
-        LIMIT 10
+        LIMIT message_limit
     ) t;
 
     -- Query for the count of channel members
@@ -1071,3 +1092,60 @@ $$ LANGUAGE plpgsql;
 -- Test
 -- SELECT * FROM get_channel_aggregate_data('99634205-5238-4ffc-90ec-c64be3ad25cf');
 
+
+CREATE OR REPLACE FUNCTION get_channel_messages_paginated(
+    input_channel_id UUID,
+    page INT,
+    page_size INT DEFAULT 20 
+)
+RETURNS TABLE(
+    messages JSONB
+) AS $$
+DECLARE
+    message_offset INT; -- Renamed 'offset' to 'message_offset' to avoid keyword conflict
+BEGIN
+    -- Calculate the message_offset based on the page number and page size
+    message_offset := (page - 1) * page_size;
+
+    -- Query to fetch messages with pagination
+    SELECT json_agg(t) INTO messages
+    FROM (
+        SELECT m.*,
+            json_build_object(
+                'id', u.id, 
+                'username', u.username, 
+                'fullname', u.full_name, 
+                'avatar_url', u.avatar_url
+            ) AS user_details,
+            CASE
+                WHEN m.reply_to_message_id IS NOT NULL THEN
+                    (SELECT json_build_object(
+                            'message', json_build_object(
+                                'id', rm.id,
+                                'created_at', rm.created_at
+                            ),
+                            'user', json_build_object(
+                                'id', ru.id,
+                                'username', ru.username,
+                                'fullname', ru.full_name,
+                                'avatar_url', ru.avatar_url
+                            )
+                        ) FROM public.messages rm
+                        LEFT JOIN public.users ru ON rm.user_id = ru.id
+                        WHERE rm.id = m.reply_to_message_id)
+                ELSE NULL
+            END AS replied_message_details
+        FROM public.messages m
+        LEFT JOIN public.users u ON m.user_id = u.id
+        WHERE m.channel_id = input_channel_id AND m.deleted_at IS NULL
+        ORDER BY m.created_at DESC 
+        LIMIT page_size OFFSET message_offset
+    ) t;
+
+    RETURN QUERY SELECT messages;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- TEST
+--- SELECT * FROM get_channel_messages_paginated('<channel_id>', 2, 10);

@@ -127,6 +127,11 @@ redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
 # or any other third-party OIDC providers.
 url = ""
+[auth.external.google]
+enabled = true
+client_id = '650393984764-bpga87jni7jjucidl9lrdq4mvi0qs26e.apps.googleusercontent.com'
+secret = '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'
+# redirect_uri = "http://localhost:54321/auth/v1/callback"
 
 [analytics]
 enabled = false

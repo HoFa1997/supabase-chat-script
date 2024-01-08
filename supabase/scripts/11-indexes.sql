@@ -33,3 +33,9 @@ CREATE INDEX idx_channel_members_member_id ON public.channel_members (member_id)
 -- Optimizes query performance for receiver_user_id and created_at.
 CREATE INDEX idx_notifications_receiver_user_id ON public.notifications (receiver_user_id);
 CREATE INDEX idx_notifications_created_at ON public.notifications (created_at);
+
+-- Indexes on public.workspaces Table
+-- Optimizes query performance for created_by.
+CREATE INDEX idx_channels_workspace_id ON public.channels (workspace_id);
+CREATE INDEX idx_messages_workspace_id ON public.messages (workspace_id);
+CREATE INDEX idx_workspaces_slug ON public.workspaces (slug);

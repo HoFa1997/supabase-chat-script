@@ -78,6 +78,7 @@ To enhance readability and clarity, the features have been categorized based on 
 - [ ] Unread Reactions
 - [ ] Search
 - [ ] Infinite Scroll
+- [ ] Date Group message Indicators
 
 ### Suggested Additional Features
 

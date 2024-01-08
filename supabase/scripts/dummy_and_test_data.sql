@@ -15,23 +15,37 @@ values
     ('c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'lisa'),
     ('35477c6b-f9a0-4bad-af0b-545c99b33fae', 'philip');
 
+
+
 /*
     -----------------------------------------
-    2. Create Channels
+    2. Create Workspaces
+       Expectation: 2 workspaces should be created.
+    -----------------------------------------
+*/
+insert into public.workspaces (id, slug, name, created_by, description)
+values
+    ('91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'supabase', 'Supabase', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'Supabase workspace'),
+    ('5a8703b7-2fd7-45ee-9d6b-5ed3e4330a40', 'supabase-community', 'Supabase Community', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'Supabase community workspace');
+
+
+/*
+    -----------------------------------------
+    3. Create Channels
        Expectation: 7 channels should be created with descriptions and types.
                     The created_by field should be set to the user who created the channel,
                     and that user should be added as an Admin in the channel_members table.
     -----------------------------------------
 */
-insert into public.channels (id, slug, name, created_by, description, type)
+insert into public.channels (id, workspace_id, slug, name, created_by, description, type)
 values
-    ('4b9f0f7e-6cd5-49b6-a8c3-141ef5905959', 'public', 'Public', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'General public discussions', 'PUBLIC'), 
-    ('27c6745d-cebd-4afd-92b0-3b9b9312381b', 'random', 'Random', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'Random thoughts and ideas', 'PUBLIC'), 
-    ('7ea75977-9bc0-4008-b5b8-13c56d16a588', 'game-boy', 'GameBoy', '35477c6b-f9a0-4bad-af0b-545c99b33fae', 'Game boy, win game awards, etc.', 'BROADCAST'),
-    ('4d582754-4d72-48f8-9e72-f6aa63dacada', 'netfilix', 'Netfilix', '35477c6b-f9a0-4bad-af0b-545c99b33fae', 'Let’s talk about Netflix series', 'PRIVATE'),
-    ('70ceab8b-2cf6-4004-8561-219de9b11ec2', 'movie-night', 'Movie Night', '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', 'Movie suggestions and discussions', 'DIRECT'),
-    ('dc6a0f60-5260-456b-a5c7-b799cece8807', 'openai', 'OpenAI', 'dc7d6520-8408-4a8b-b628-78d5f82b8b62', 'What’s happening with OpenAI?', 'BROADCAST'),
-    ('1292efc2-0cdc-470c-9364-ba76f19ce75d', 'tech-talk', 'Tech Yalk', 'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'Discussions about the latest in tech', 'GROUP');
+    ('4b9f0f7e-6cd5-49b6-a8c3-141ef5905959', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'public', 'Public', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'General public discussions', 'PUBLIC'), 
+    ('27c6745d-cebd-4afd-92b0-3b9b9312381b', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'random', 'Random', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'Random thoughts and ideas', 'PUBLIC'), 
+    ('7ea75977-9bc0-4008-b5b8-13c56d16a588', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'game-boy', 'GameBoy', '35477c6b-f9a0-4bad-af0b-545c99b33fae', 'Game boy, win game awards, etc.', 'BROADCAST'),
+    ('4d582754-4d72-48f8-9e72-f6aa63dacada', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'netfilix', 'Netfilix', '35477c6b-f9a0-4bad-af0b-545c99b33fae', 'Let’s talk about Netflix series', 'PRIVATE'),
+    ('70ceab8b-2cf6-4004-8561-219de9b11ec2', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'movie-night', 'Movie Night', '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a', 'Movie suggestions and discussions', 'DIRECT'),
+    ('dc6a0f60-5260-456b-a5c7-b799cece8807', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'openai', 'OpenAI', 'dc7d6520-8408-4a8b-b628-78d5f82b8b62', 'What’s happening with OpenAI?', 'BROADCAST'),
+    ('1292efc2-0cdc-470c-9364-ba76f19ce75d', '91fd572a-60a3-4baa-9e6a-39e7ae460d9e', 'tech-talk', 'Tech Yalk', 'c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'Discussions about the latest in tech', 'GROUP');
 
 -- Mapping of channels with types and the user who created them.
 -- public       -> PUBLIC       -> supabot

@@ -3,6 +3,7 @@
 -- Channels have attributes like privacy settings, member limits, activity timestamps, and user interaction settings.
 CREATE TABLE public.channels (
     id                              UUID DEFAULT uuid_generate_v4() NOT NULL PRIMARY KEY,
+    workspace_id                    UUID NOT NULL REFERENCES public.workspaces,
     created_at                      TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
     slug                            TEXT NOT NULL UNIQUE,
     name                            TEXT NOT NULL CHECK (length(name) <= 100),

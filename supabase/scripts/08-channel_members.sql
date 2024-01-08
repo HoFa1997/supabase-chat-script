@@ -10,9 +10,10 @@ CREATE TABLE public.channel_members (
     left_at               TIMESTAMP WITH TIME ZONE, -- Timestamp when the user left the channel.
     mute_in_app_notifications BOOLEAN DEFAULT false, -- Indicates if notifications are muted for the channel.
     channel_member_role   channel_member_role DEFAULT 'MEMBER'::public.channel_member_role, -- The role of the user in the channel (e.g., admin, moderator, member).
-    unread_message_count INT DEFAULT 0, -- The number of unread messages for the user in the channel.
+    unread_message_count  INT DEFAULT 0, -- The number of unread messages for the user in the channel.
+    created_at            TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL, -- Timestamp when the membership record was created.
+    updated_at            TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()), -- Timestamp when the membership record was last updated.
     PRIMARY KEY (channel_id, member_id) -- Composite primary key to ensure unique membership records for each channel.
 );
 
-COMMENT ON TABLE public.channel_members IS 'Tracks user membership in channels, including the status of the last message read by each user in a specific channel.';
-
+COMMENT ON TABLE public.channel_members IS 'Tracks user membership in channels, including the status of the last message read by each user in a specific channel. The created_at and updated_at columns help monitor the history and changes in user-channel relationships.';

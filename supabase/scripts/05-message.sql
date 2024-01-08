@@ -11,13 +11,14 @@ CREATE TABLE public.messages (
     html                   TEXT, -- The actual HTML content of the message.
     medias                 JSONB, -- Stores URLs to media (images, videos, etc.) associated with the message.
     user_id                UUID NOT NULL REFERENCES public.users, -- The ID of the user who sent the message.
+    workspace_id           UUID NOT NULL REFERENCES public.workspaces ON DELETE SET NULL, -- The ID of the workspace where the message was sent.
     channel_id             UUID NOT NULL REFERENCES public.channels ON DELETE SET NULL, -- The ID of the channel where the message was sent.
     reactions              JSONB, -- JSONB field storing user reactions to the message.
     type                   message_type, -- Enumerated type of the message (text, image, video, etc.).
     metadata               JSONB, -- Additional metadata about the message in JSONB format.
     reply_to_message_id    UUID REFERENCES public.messages(id) ON DELETE SET NULL, -- The ID of the message this message is replying to, if any.
     replied_message_preview TEXT, -- Preview text of the message being replied to.
-    origin_message_id    UUID REFERENCES public.messages(id) ON DELETE SET NULL, -- ID of the original message if this is a forwarded message.
+    origin_message_id      UUID REFERENCES public.messages(id) ON DELETE SET NULL, -- ID of the original message if this is a forwarded message.
     thread_id              UUID REFERENCES public.messages(id) ON DELETE SET NULL, -- ID of the thread this message belongs to.
     thread_depth           INT DEFAULT 0, -- Depth of the message in the thread.
     is_thread_root         BOOLEAN DEFAULT false, -- Indicates if the message is the root of a thread.
