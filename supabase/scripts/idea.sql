@@ -2,27 +2,6 @@
 -- 2/ when user delete, all data that belong to user will be deleted, like message, channel, channel_member, notification, etc
 -- 3/ channel_invites table
 
-
-
-
--- Send "previous data" on change
--- for tracking row changed in realtime
-alter table public.users replica identity full;
-alter table public.channels replica identity full;
-alter table public.messages replica identity full;
-
--- add tables to the publication
--- reflace the tables changes to all subscribers
-alter publication supabase_realtime add table public.users;
-alter publication supabase_realtime add table public.channels;
-alter publication supabase_realtime add table public.messages;
-
-
-
-
-
-
-
 -- Table: public.user_roles
 -- Description: This table defines the roles assigned to each user. Roles are used to manage access and permissions within the application.
 CREATE TABLE public.user_roles (
@@ -34,7 +13,6 @@ CREATE TABLE public.user_roles (
 
 COMMENT ON TABLE public.user_roles IS 'Stores the roles assigned to each user, linking to the users table.';
 
-
 -- Table: public.role_permissions
 -- Description: This table maps each role to its respective permissions, defining what actions each role can perform within the application.
 CREATE TABLE public.role_permissions (
@@ -45,8 +23,6 @@ CREATE TABLE public.role_permissions (
 );
 
 COMMENT ON TABLE public.role_permissions IS 'Details the specific permissions associated with each role, used for access control.';
-
-
 
 -- Secure the tables
 alter table public.users enable row level security;
@@ -68,13 +44,11 @@ create policy "Allow individual delete access" on public.messages for delete usi
 create policy "Allow authorized delete access" on public.messages for delete using ( authorize('messages.delete', auth.uid()) );
 create policy "Allow individual read access" on public.user_roles for select using ( auth.uid() = user_id );
 
-
 insert into public.role_permissions (role, permission)
 values
     ('admin', 'channels.delete'),
     ('admin', 'messages.delete'),
     ('moderator', 'messages.delete');
-
 
 
 -- Indexes on public.user_roles Table
@@ -85,8 +59,6 @@ CREATE INDEX idx_user_roles_user_id ON public.user_roles (user_id);
 -- Indexes on public.role_permissions Table
 -- Optimizes query performance for role.
 CREATE INDEX idx_role_permissions_role ON public.role_permissions (role);
-
-
 
 /*
   Function: authorize
@@ -110,21 +82,6 @@ BEGIN
   RETURN permission_count > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
   Realtime Subscriptions Setup

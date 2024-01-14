@@ -8,6 +8,25 @@ This project is a streamlined replication of Slack's key features, combining Sup
 
 Our goal is to provide a full-featured chat and collaboration platform, ranging from simple messaging to advanced integrations.
 
+## Install
+
+The Supabase CLI provides tools to develop your project locally and deploy to the Supabase Platform. follow the steps below to install the CLI.
+
+```bash
+brew install supabase/tap/supabase
+# or
+brew upgrade supabase
+
+```
+
+## start/stop the project
+
+```bash
+$ supabase start
+# or
+$ supabase stop
+```
+
 ## Features
 
 To enhance readability and clarity, the features have been categorized based on their purpose:
@@ -53,7 +72,7 @@ To enhance readability and clarity, the features have been categorized based on 
 
 ### Media and Integrations
 
-- [ ] Image, Voice, Videp, File Uploads
+- [ ] Multimedai(Image, Voice, Video) File Uploads
 - [ ] Giphy Integration
 - [ ] YouTube Integration
 - [ ] Spotify Integration

@@ -6,7 +6,7 @@
        Expectation: 6 users should be created.
     -----------------------------------------
 */
-insert into auth.users (id, email)
+insert into auth.users (id, email, password)
 values
     ('8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'supabot'),
     ('5f55998b-7958-4ae3-bcb7-539c65c00884', 'jack'),
@@ -14,8 +14,6 @@ values
     ('dc7d6520-8408-4a8b-b628-78d5f82b8b62', 'jhon'),
     ('c2e3e9e7-d0e8-4960-9b05-d263deb2722f', 'lisa'),
     ('35477c6b-f9a0-4bad-af0b-545c99b33fae', 'philip');
-
-
 
 /*
     -----------------------------------------
@@ -595,7 +593,7 @@ values
     'f5ac64c5-7b1f-486c-8cb6-f7c18e2569ba', -- ID
     '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netfilix
     '35477c6b-f9a0-4bad-af0b-545c99b33fae', -- User: philip
-    'Yes! Thats a new thing! But we have a new surprise. I heard from the bosss call that they are going to create a new franchise from "The Boys" series!', -- Content
+    'Yes! Thats a new thing! But we have a new surprise. I heard from the bosss call that they are going to create a new franchise from 'The Boys' series!', -- Content
     '5fb62876-c099-4284-8295-f3e898ad88e0', -- thread id
     '94f6903b-b13d-4b37-b757-c4dab8c05b07' -- original message id
 );
@@ -609,3 +607,203 @@ SET reactions = jsonb_set(
     true
 )
 WHERE id = '5fb62876-c099-4284-8295-f3e898ad88e0';
+
+
+/*
+    -----------------------------------------
+    15. seed netflix channel with messages
+    -----------------------------------------
+*/
+
+INSERT INTO public.messages (content, channel_id, user_id)
+VALUES
+(
+    'Hey! Have you started watching ''The Midnight Chronicles'' on Netflix? It''s the new talk of the town!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Just started yesterday. It''s intriguing! The way they blend mystery and sci-fi is mind-blowing.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Totally agree. Episode 3''s twist was unexpected. Did you see that coming?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'No way! I was completely shocked. Also, the cinematography is stunning, don''t you think?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Absolutely, the visuals are a feast for the eyes. And the soundtrack complements it so well.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Speaking of soundtrack, did you recognize the song in the opening of episode 4? It sounded familiar.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Exactly why I''m hooked. Can''t remember the last time I was this excited for a series.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Me neither. It''s the highlight of my week. Can''t wait to see how the season ends!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Yeah, it''s quite immersive. Adds a whole new layer to the series experience.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Sounds cool. I''ll check it out. Do you have a favorite character so far?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Hard to choose, but probably the AI. Her character arc is fascinating.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'She''s great. I''m leaning towards the detective. His backstory is intriguing.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'True, they''ve done a great job with his character. Adds a lot of depth to the plot.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'For sure. Also, what did you think about the revelation in episode 7 about the main antagonist?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'That was a game-changer! Completely changed my perspective on the whole story.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Same here. It''s rare for a show to surprise me like this one does.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Exactly why I''m hooked. Can''t remember the last time I was this excited for a series.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Me neither. It''s the highlight of my week. Can''t wait to see how the season ends!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Emma, did you notice the incredible camera work in the last episode? The long takes were amazing!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Absolutely, Philip! Those long takes added so much tension. Also, the use of lighting was so dramatic.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'For sure. And what''s your take on the subplot with the mysterious organization? It''s getting more complex.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'I think it''s leading to a major reveal. Maybe they''re connected to the protagonist''s past?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'That''s an interesting theory! It could tie up a lot of loose ends. Also, the dialogues in the show are so sharp.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'True, every line seems to have a deeper meaning. By the way, did you catch the reference to that classic sci-fi movie?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'I did! That was a clever homage. This show really respects its genre roots. Plus, the soundtrack is spot on.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'The soundtrack is a character in itself! It perfectly sets the mood for every scene. Also, the costume design is so detailed.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Absolutely, the costumes add so much to the world-building. Every character''s style tells a story.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Exactly. And speaking of stories, any predictions for the season finale? I''m expecting a big twist!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'I''m curious about the new character introduced last episode. Any thoughts on their role?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'My guess is they''re key to the main plot twist. Maybe a hidden ally? The suspense is killing me!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Agreed! Also, the latest episode''s cliffhanger was epic. How do you think they''ll resolve that?', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'I have no idea, but I''m expecting a major plot twist. This show always surprises us!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Exactly! Also, have you noticed the subtle hints about the protagonist''s past? They''re adding up.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Yes, those breadcrumbs are leading to something big. Cant wait to see how they tie everything together.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'And what about the special effects in the last battle scene? They were out of this world!', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Truly spectacular! It felt like watching a high-budget movie. The production value is incredible.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+),
+(
+    'Agree. Also, the evolving dynamics between the main characters is so well written. It feels natural.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '35477c6b-f9a0-4bad-af0b-545c99b33fae' -- User: Philip
+),
+(
+    'Definitely. The character development is top-notch. Makes you invest in their journey.', -- Content
+    '4d582754-4d72-48f8-9e72-f6aa63dacada', -- Channel: netflix
+    '1059dbd0-3478-46f9-b8a9-dcd23ed0a23a' -- User: Emma
+);

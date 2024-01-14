@@ -1,11 +1,6 @@
-
-
 /*
-
 Helper functions
-
 */
-
 
 CREATE OR REPLACE FUNCTION truncate_content(input_content TEXT, max_length INT DEFAULT NULL) RETURNS TEXT AS $$
 DECLARE
@@ -23,8 +18,6 @@ BEGIN
     END;
 END;
 $$ LANGUAGE plpgsql;
-
-
 
 /*
   Function: handle_new_user
@@ -62,57 +55,6 @@ AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE PROCEDURE public.handle_new_user();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
     -----------------------------------------
     -----------------------------------------
@@ -147,21 +89,6 @@ FOR EACH ROW
 EXECUTE FUNCTION add_channel_creator_as_admin();
 
 COMMENT ON TRIGGER trigger_add_creator_as_admin ON public.channels IS 'Trigger that invokes add_channel_creator_as_admin function to add the channel creator as an admin in channel_members table after a new channel is created.';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
     --------------------------------------------------------
@@ -275,7 +202,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER handle_soft_delete_trigger
-BEFORE UPDATE OF deleted_at ON public.messages
+AFTER UPDATE OF deleted_at ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION handle_soft_delete();
 
@@ -323,41 +250,6 @@ CREATE TRIGGER decrement_unread_message_count_trigger_hard_delete
 AFTER DELETE ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION decrement_unread_message_count();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
     --------------------------------------------------------
@@ -418,10 +310,6 @@ WHEN (OLD.content IS DISTINCT FROM NEW.content)
 EXECUTE FUNCTION update_message_preview_on_edit();
 
 
-
-
-
-
 /*
     --------------------------------------------------------
     Trigger Function: update_message_preview_on_reply
@@ -440,7 +328,8 @@ BEGIN
         truncated_content := truncate_content(NEW.content);
 
         UPDATE public.channels
-        SET last_message_preview = truncated_content
+        SET last_message_preview = truncated_content,
+            last_activity_at = NOW()
         WHERE id = NEW.channel_id;
     END IF;
 
@@ -465,10 +354,6 @@ FOR EACH ROW
 EXECUTE FUNCTION update_channel_preview_on_new_message();
 
 COMMENT ON TRIGGER update_channel_preview_on_new_message_trigger ON public.messages IS 'Trigger to update the last message preview in the corresponding channel when a new message is inserted.';
-
-
-
-
 
 
 CREATE OR REPLACE FUNCTION update_replied_message_preview()
@@ -499,10 +384,6 @@ FOR EACH ROW
 EXECUTE FUNCTION update_replied_message_preview();
 
 
-
-
-
-
 /*
     --------------------------------------------------------
     Trigger Function: copy_content_for_forwarded_message
@@ -510,7 +391,7 @@ EXECUTE FUNCTION update_replied_message_preview();
                  It copies the content and media from the original message, resetting certain fields to ensure integrity.
     --------------------------------------------------------
 */
-
+-- TODO: metadata for forwarded chains not good choice
 CREATE OR REPLACE FUNCTION copy_content_for_forwarded_message()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -521,20 +402,20 @@ BEGIN
   -- Check if the message is a forward by the presence of origin_message_id
   IF NEW.origin_message_id IS NOT NULL THEN
     -- Retrieve content, media, and metadata from the original message
-    SELECT content, html, medias, metadata INTO original_message 
+    SELECT content, html, medias, metadata, user_id INTO original_message 
     FROM public.messages 
     WHERE id = NEW.origin_message_id;
 
     -- Retrieve the forwarding user's details
     SELECT id, username, full_name, avatar_url INTO forwarding_user
     FROM public.users
-    WHERE id = NEW.user_id; -- Assuming NEW.user_id is the ID of the user who is forwarding the message
+    WHERE id = original_message.user_id; -- Assuming NEW.user_id is the ID of the user who is forwarding the message
 
     -- Prepare user details JSON object
     user_details := jsonb_build_object(
         'id', forwarding_user.id,
         'username', forwarding_user.username,
-        'full_name', forwarding_user.full_name
+        'full_name', forwarding_user.full_name,
         'avatar_url', forwarding_user.avatar_url
     );
 
@@ -575,35 +456,6 @@ BEFORE INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION copy_content_for_forwarded_message();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
     --------------------------------------------------------
     Trigger Function: update_channel_activity_on_pin
@@ -635,12 +487,6 @@ CREATE TRIGGER channel_activity_update_on_message_pin_trigger
 AFTER INSERT ON public.pinned_messages
 FOR EACH ROW
 EXECUTE FUNCTION update_channel_activity_on_pin();
-
-
-
-
-
-
 
 /*
     --------------------------------------------------------
@@ -693,16 +539,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
 CREATE TRIGGER before_insert_message
 BEFORE INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION update_replied_metadata_before_insert();
 
-
-
-
-
+-----------------------------------------
 
 CREATE OR REPLACE FUNCTION handle_open_a_thread()
 RETURNS TRIGGER AS $$
@@ -718,7 +560,9 @@ FOR EACH ROW
 WHEN (NEW.thread_owner_user_id IS NOT NULL)
 EXECUTE FUNCTION handle_open_a_thread();
 
+-----------------------------------------
 
+-----------------------------------------
 
 CREATE OR REPLACE FUNCTION handle_set_thread_depth()
 RETURNS TRIGGER AS $$
@@ -743,12 +587,9 @@ FOR EACH ROW
 WHEN (NEW.thread_id IS NOT NULL)
 EXECUTE FUNCTION handle_set_thread_depth();
 
+-----------------------------------------
 
-
-
-
-
-
+-----------------------------------------
 
 CREATE OR REPLACE FUNCTION create_notifications_for_new_message() RETURNS TRIGGER AS $$
 DECLARE
@@ -829,7 +670,7 @@ AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION create_notifications_for_new_message();
 
-
+-----------------------------------------
 
 CREATE OR REPLACE FUNCTION create_notifications_for_new_unique_reactions() RETURNS TRIGGER AS $$
 DECLARE
@@ -874,9 +715,7 @@ FOR EACH ROW
 WHEN (OLD.reactions IS DISTINCT FROM NEW.reactions)
 EXECUTE FUNCTION create_notifications_for_new_unique_reactions();
 
-
-
-
+-----------------------------------------
 
 CREATE OR REPLACE FUNCTION update_edited_at() RETURNS TRIGGER AS $$
 BEGIN
@@ -896,9 +735,7 @@ BEFORE UPDATE OF content, html ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION update_edited_at();
 
-
-
-
+-----------------------------------------
 
 -- Function to update message metadata
 CREATE OR REPLACE FUNCTION update_message_metadata_on_pin()
@@ -934,7 +771,7 @@ CREATE TRIGGER trigger_update_message_on_pin
 BEFORE INSERT ON public.pinned_messages
 FOR EACH ROW EXECUTE FUNCTION update_message_metadata_on_pin();
 
-
+-----------------------------------------
 
 -- Function to update message metadata when a pinned message is deleted
 CREATE OR REPLACE FUNCTION update_message_metadata_on_unpin()

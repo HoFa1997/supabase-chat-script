@@ -37,5 +37,4 @@ CREATE INDEX idx_notifications_created_at ON public.notifications (created_at);
 -- Indexes on public.workspaces Table
 -- Optimizes query performance for created_by.
 CREATE INDEX idx_channels_workspace_id ON public.channels (workspace_id);
-CREATE INDEX idx_messages_workspace_id ON public.messages (workspace_id);
 CREATE INDEX idx_workspaces_slug ON public.workspaces (slug);

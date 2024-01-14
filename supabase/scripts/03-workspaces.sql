@@ -7,7 +7,7 @@ CREATE TABLE public.workspaces (
     description       TEXT CHECK (length(description) <= 1000), -- Optional description of the workspace, limited to 1000 characters.
     metadata          JSONB DEFAULT '{}'::jsonb, -- Optional metadata about the workspace in JSONB format.
     created_by        UUID NOT NULL REFERENCES public.users, -- The ID of the user who created the workspace, referencing the users table.
-    created_at        TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL -- The timestamp when the workspace was created, set to the current UTC time.
+    created_at        TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL, -- The timestamp when the workspace was created, set to the current UTC time.
     updated_at        TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) -- The timestamp when the workspace was last updated, set to the current UTC time.
 );
 
